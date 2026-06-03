@@ -1,0 +1,4 @@
+# The memory dir is its own git repo, committed separately and kept local.
+# If you nest a real memory/ inside this kit, ignore it here.
+/memory/
+.DS_Store
