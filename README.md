@@ -30,12 +30,22 @@ Trade-off: no automatic relevance-decay daemon. So the forgetting has to be a *d
 
 ## Install (Claude Code)
 
+Fastest path — `init.sh` scaffolds the context, installs the commands, and git-inits the memory dir for you:
+
+```bash
+./init.sh --path your-context-repo
+```
+
+It's idempotent (re-run it anytime; existing files are left alone unless you pass `--force`) and has flags for global command install and an external memory dir — see `./init.sh --help`.
+
+Manual install, if you'd rather wire it yourself:
+
 1. Copy `commands/*.md` into your project's `.claude/commands/` (or `~/.claude/commands/` for global).
-2. Copy `prompts/rot.md` into `scripts/dream/prompts/` (or wherever you point the dream command).
-3. Scaffold your context from `context-starter/` (see [`docs/quickstart` below](#quickstart)).
+2. Copy `prompts/rot.md` into the project root's `prompts/` (where `/dream` reads it).
+3. Scaffold your context from `context-starter/` (see [Quickstart](#quickstart)).
 4. Point the kit at a memory directory (see [Memory directory resolution](#memory-directory-resolution)).
 
-It's portable beyond Claude Code: the commands are plain markdown instruction files. Any agent runner that can execute a prompt-as-procedure can run them.
+Portable beyond Claude Code: the commands are plain markdown instruction files. Any agent runner that can execute a prompt-as-procedure can run them.
 
 ## Quickstart
 
@@ -51,7 +61,7 @@ your-context-repo/
     └── {topic}.md          # detail files, loaded on demand
 ```
 
-Copy the `context-starter/` tree, fill in `CONTEXT.md` and `state/current.md`, then `git init` inside `memory/`:
+`init.sh` builds this for you. To do it by hand: copy the `context-starter/` tree, fill in `CONTEXT.md` and `state/current.md`, then `git init` inside `memory/`:
 
 ```bash
 cd memory && git init && git add -A && git commit -m "seed memory"
