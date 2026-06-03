@@ -17,7 +17,7 @@ Two weeks later the memory was lying to me.
 
 Not corrupted. Not lost. Worse: confidently wrong. An entry said a vendor approval was still "pending" a week after it cleared. Two rules about my own workflow gave opposite instructions for the same situation, and both loaded into every session, so the agent followed whichever it read last. The index that's supposed to stay small had quietly grown past the budget I set, because capture only ever adds.
 
-Here's what most people building agent memory are getting wrong. Capture is solved. Curation isn't. And a memory system with no curator does not fade gracefully. It rots.
+Most people building agent memory are getting one thing wrong. Capture is solved. Curation isn't. And a memory system with no curator does not fade gracefully. It rots.
 
 ## The half that has no demo
 
@@ -27,15 +27,15 @@ Capture and recall are easy and increasingly commoditized. Claude Code ships a m
 
 Curation has no demo moment. It's the pass that goes back through everything you stored and asks: is this still true? Do these two facts contradict each other? Has this project status flipped since I wrote it? When curation works, nothing visible happens. The agent just quietly fails to be confidently wrong next week. That's the entire value, and it's invisible, which is exactly the kind of work that doesn't get built.
 
-Want evidence this is a real gap and not just my bad week? Look at the best open-source memory library in the ecosystem.
+This isn't just my bad week. Look at the most popular open-source memory library in the ecosystem.
 
 ## Even the expert's library skips it
 
-Richmond Alake came on the show to argue that memory engineering deserves to be its own discipline. He's the one who gave me the line I keep repeating: don't delete, **forget**. Information should decay by relevance and recency, not get hard-deleted, so the audit trail survives. He maintains memorizz, a typed memory layer with 740-plus stars, with memory categories mapped straight onto neuroscience: episodic, semantic, procedural, short-term, entity, shared. It is genuinely good engineering.
+Richmond Alake came on the show to argue that memory engineering deserves to be its own discipline. He's the one who gave me the line I keep repeating: don't delete, **forget**. Information should decay by relevance and recency, not get hard-deleted, so the audit trail survives. He maintains memorizz, a typed memory layer with 740-plus stars, with memory categories mapped straight onto neuroscience: episodic, semantic, procedural, short-term, entity, shared. It is good engineering.
 
 I went looking through it for the forgetting. I searched the docs for decay, consolidation, relevance scoring, pruning, expiry. There's nothing. memorizz, by its own README, documents memory retention and retrieval, and leaves the forgetting to you.
 
-I want to be clear that this is not a knock on Richmond. It's the most honest illustration of the problem I can point to. The person who coined "don't delete, forget" ships a serious memory layer where the forgetting is an exercise for the reader. That's not an oversight. That's the shape of the field. Forgetting is the hard, unglamorous, demo-less half of memory, so almost everyone ships the other half and calls it done.
+This is not a knock on Richmond. It's the most honest illustration of the problem I can point to. The engineer making the case for "don't delete, forget" ships a serious memory layer where the forgetting is an exercise for the reader. That's not an oversight. That's the shape of the field. Forgetting is the hard, unglamorous, demo-less half of memory, so almost everyone ships the other half and calls it done.
 
 ## Why this one is actually LLM-shaped
 
