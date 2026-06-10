@@ -2,3 +2,4 @@
 # If you nest a real memory/ inside this kit, ignore it here.
 /memory/
 .DS_Store
+Thumbs.db
