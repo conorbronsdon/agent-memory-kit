@@ -9,8 +9,8 @@
       "target": "project_vendor_migration.md",
       "reasoning": "Memory says the Northwind contract is 'submitted to finance, pending approval' as of 2026-04-28 and that the Acme cutover cannot proceed. state/blockers.md (Recently unblocked, 2026-05-12) and state/decisions.md (2026-05-12) both show finance approved and the cutover is proceeding. The 'pending approval' status is stale. Rewrite to reflect approved + cutover in progress.",
       "evidence": [
-        "state/blockers.md L12: '| Vendor migration finance approval | 2026-05-12 | Closed. Northwind contract approved. Acme cutover can proceed. |'",
-        "state/decisions.md L8: '| 2026-05-12 | Proceed with the Northwind cutover now that finance approved | ...'",
+        "state/blockers.md L11: '| Vendor migration finance approval | 2026-05-12 | Closed. Northwind contract approved. Acme cutover can proceed. |'",
+        "state/decisions.md L7: '| 2026-05-12 | Proceed with the Northwind cutover now that finance approved | ...'",
         "sessions/2026-05-12.md: 'finance approved the Northwind contract this morning'"
       ],
       "current_excerpt": "**Status (2026-04-28):** Northwind contract submitted to finance, pending approval. Cannot cancel the Acme contract until approval lands.",
