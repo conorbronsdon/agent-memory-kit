@@ -34,7 +34,7 @@ Without curation, the agent answers from the rotted note:
 
 The `/dream` pass catches it. From the worked artifact in [`examples/dream-pass/`](examples/dream-pass/):
 
-> `project_vendor_migration.md`: memory says "pending approval," but `state/blockers.md` shows "Closed 2026-05-12" and commit `a1b2c3d` confirms it. Proposed: rewrite to closed. Evidence cited. You accept. Next session the agent answers correctly.
+> `project_vendor_migration.md`: memory says "pending approval," but `state/blockers.md` shows "Closed 2026-05-12" and `state/decisions.md` logs the cutover decision the same day. Proposed: rewrite the status to approved, cutover in progress. Evidence cited. You accept. Next session the agent answers correctly.
 
 Walk the whole thing in [`examples/README.md`](examples/README.md).
 
