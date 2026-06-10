@@ -38,7 +38,7 @@ while [ $# -gt 0 ]; do
     --commands)    COMMANDS_SCOPE="$2"; shift 2 ;;
     --force)       FORCE=1; shift ;;
     --help|-h)
-      sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
     *)
       echo "init.sh: unknown argument '$1' (try --help)" >&2
@@ -88,9 +88,15 @@ place "$SCRIPT_DIR/prompts/rot.md" "$TARGET/prompts/rot.md"
 # --- 4. memory dir: scaffold + git init (local-only) -----------------------
 mkdir -p "$MEMORY_DIR"
 place "$SCRIPT_DIR/context-starter/memory/MEMORY.md" "$MEMORY_DIR/MEMORY.md"
-if [ ! -e "$MEMORY_DIR/ARCHIVE.md" ]; then
-  printf '# Archive\n\nSuperseded memories. Kept for history, not loaded each session.\n\n| date | memory | reason |\n|---|---|---|\n' > "$MEMORY_DIR/ARCHIVE.md"
-  echo "  wrote: ${MEMORY_DIR#$TARGET/}/ARCHIVE.md"
+
+# ARCHIVE.md is generated, not copied, so it can't go through place(). Mirror
+# place()'s idempotency: skip if it exists (unless --force), and always print.
+ARCHIVE_DST="$MEMORY_DIR/ARCHIVE.md"
+if [ -e "$ARCHIVE_DST" ] && [ "$FORCE" -eq 0 ]; then
+  echo "  skip (exists): ${ARCHIVE_DST#$TARGET/}"
+else
+  printf '# Archive\n\nSuperseded memories. Kept for history, not loaded each session.\n\n| date | memory | reason |\n|---|---|---|\n' > "$ARCHIVE_DST"
+  echo "  wrote: ${ARCHIVE_DST#$TARGET/}"
 fi
 
 if [ -d "$MEMORY_DIR/.git" ]; then
@@ -114,6 +120,8 @@ Done. Next:
   1. Fill in CONTEXT.md (who you are + routing) and state/current.md.
   2. If memory lives outside this repo, export AGENT_MEMORY_DIR=$MEMORY_DIR
   3. Open your agent here and run /start. Close with /end. Curate with /dream.
+
+Try it now: run /dream against the seeded memory to see an empty-but-valid pass.
 
 Memory dir: $MEMORY_DIR  (keep it local if it holds anything private)
 EOF

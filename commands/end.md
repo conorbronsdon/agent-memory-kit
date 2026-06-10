@@ -55,7 +55,19 @@ Run `date +%Y-%m-%d` for TODAY and `date +%H:%M` for TIME. Append to `sessions/{
 
 `state/current.md` is for **context and attention, not scheduling**. Keep volatile schedule data (dates, numbers that change) in its source of truth and reference it, don't copy it here.
 
-## 4. Propose durable memory updates
+## 4. Log decisions (if any, and if you keep a decision log)
+
+If a real decision was made this session and a `state/decisions.md` exists, append a row. The rot curator reads `state/decisions.md` as strong evidence that something happened, so a logged decision is exactly what lets a later `/dream` pass catch a memory that has gone stale against it. This is the load-bearing reason to keep the log.
+
+```markdown
+| {TODAY} | {decision} | {context / rationale} | {rejected alternatives} |
+```
+
+Only log decisions a future session needs to know about: source-of-truth changes, strategy pivots, scope calls, tool or process choices. Skip the trivial ones. Fill the **rejected alternatives** column when there was a real branch point (what else was on the table and why it lost, or the wrong theory you tried first). Leave it blank when there was only one obvious option. The non-chosen paths are the failed-hypothesis record that stops a future session from re-litigating a path already ruled out.
+
+If you don't keep a decision log, skip this step. The kit doesn't scaffold `state/decisions.md` by default, but the curator uses it when it's there.
+
+## 5. Propose durable memory updates
 
 Scan the session for patterns worth preserving **across all sessions** (not just this repo's state). Propose **0–2** additions or edits to memory.
 
@@ -83,7 +95,16 @@ MEMORY PROPOSALS:
 
 On "save," follow `docs/memory-format.md`: write the detail file, add a one-line index entry to `memory/MEMORY.md`, check the index against its line budget. If nothing qualifies, skip silently.
 
-## 5. Git safety check (do not skip)
+## 6. Quick drift check (only if sessions run in parallel)
+
+If you ever run two agent sessions against the same context at once, a memory write from one can clobber the other's. Catch it cheaply: `git log --oneline --all --since="6 hours ago"`.
+
+- If a parallel commit touched a file this session also edited (especially anything under `memory/` or `state/`), flag the possible conflict and wait for the user before fixing anything: "Parallel session also edited {file}, check for conflicts."
+- No parallel commits, or you only run one session at a time? Skip silently, don't mention this step.
+
+This is a fast spot-check, not a full reconcile. It exists because memory is the one thing two sessions both want to write.
+
+## 7. Git safety check (do not skip)
 
 Run `git status` and `git log @{u}..HEAD --oneline 2>/dev/null`.
 
@@ -93,7 +114,7 @@ Run `git status` and `git log @{u}..HEAD --oneline 2>/dev/null`.
 
 If the user declines to commit, note it under Open Threads in the session log.
 
-## 6. Confirm
+## 8. Confirm
 
 Two lines: what was logged, and the top open thread or next action. Keep it short.
 
