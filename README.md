@@ -40,8 +40,7 @@ Walk the whole thing in [`examples/README.md`](examples/README.md).
 
 ## How this relates to claude-context-os
 
-<!-- CONOR: positioning draft, edit before launch -->
-This kit is the memory curation loop pulled out to its thinnest adoptable form: one idea (capture, recall, curate, and curate is the one nobody ships), five commands, markdown in and evidence-cited JSON diffs out. Steal it into whatever setup you already run. [claude-context-os](https://github.com/conorbronsdon/claude-context-os) is the full context operating system this loop was extracted from: identity files, projects, skills, claude.ai sync, hooks, MCP, the works, with the memory loop as one module inside it. If you want the standalone curation pass, you are in the right place. If you want the whole system it lives in, go there.
+This kit is the memory curation loop from [claude-context-os](https://github.com/conorbronsdon/claude-context-os), pulled out to its thinnest adoptable form. One idea: capture, recall, curate, and curate is the part nobody ships. Five commands, markdown in, evidence-cited JSON diffs out. Steal it into whatever setup you already run. claude-context-os is the full context operating system this loop lives inside as one module: identity files, projects, skills, hooks, MCP, the works. If you want the standalone curation pass, you are in the right place. If you want the whole system, go there.
 
 ## How this differs
 
