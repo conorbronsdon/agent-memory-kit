@@ -82,6 +82,7 @@ Keep the memory repo **local-only** if it holds anything private. No remote. The
 - [`docs/philosophy.md`](docs/philosophy.md) — capture vs. curate vs. recall, and why curation is the missing one.
 - [`docs/memory-format.md`](docs/memory-format.md) — the file format: frontmatter, the four memory types, links, the index/detail split, the budget cap.
 - [`docs/curation.md`](docs/curation.md) — the curator architecture: inputs, evidence-gated proposals, human-reviewed apply, git-on-memory.
+- [`docs/lessons-from-memorizz.md`](docs/lessons-from-memorizz.md) — what this kit adopts from Richmond Alake's `memorizz`, and where it diverges.
 
 ## Lineage
 
