@@ -60,12 +60,15 @@ Build in order of false-positive cost — cheapest-to-dismiss first.
 | Curator | Question | Output | Status |
 |---|---|---|---|
 | **rot** | Does each project/reference memory still match the world? | modify / archive / flag | shipped (`prompts/rot.md`) |
+| **lint** | Is the store well-formed: index in sync, no duplicates, no contradictions, no dead references, types right? | modify / archive / flag | shipped (`prompts/lint.md`) |
 | **pattern** | What recurring friction (3+ sessions) has no memory yet? | add | next |
-| **contradiction** | Do two memories give conflicting guidance? | flag (never auto-resolve) | later |
+| **contradiction** | Do two memories give conflicting guidance? | flag (never auto-resolve) | basic pair check ships inside lint; dedicated curator later |
 | **untapped** | What session-log theme was never promoted to memory or instructions? | flag | later |
 | **audit** | Did recent sessions follow the rules in memory? | flag (coaching note) | later, maybe never |
 
 Rot first: easiest objective spec, lowest false-positive cost ("no, still true" is cheap to dismiss), runs against existing data, proves the substrate on day one.
+
+Lint is the complementary axis. Rot asks whether memory still matches the world and needs `state/` and `sessions/` to answer. Lint asks whether the store matches itself (index in sync with files, one fact per file, links resolving, no two rules that cannot both be followed) and needs nothing but the memory dir plus cheap filesystem checks, so it is the right first pass on a store you inherited or have not curated in a while. Where the two overlap (an expired date, work that git says shipped), lint flags and names rot as the follow-up rather than rewriting on thin evidence.
 
 ## What this deliberately doesn't do
 

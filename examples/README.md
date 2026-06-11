@@ -67,3 +67,23 @@ The deploy reference and the user preference are skipped on purpose: a static re
 > **Agent:** Approved 2026-05-12. Acme cutover in progress.
 
 That is the entire bet of this kit, made concrete: the curator quietly stops the agent from being confidently wrong next week.
+
+## A second pass: structural lint
+
+Rot asks whether memory still matches the world. `/dream lint` asks whether the store matches itself. A memory directory can be completely rot-free and still broken: index lines pointing at deleted files, the same fact captured twice under two names, two rules that cannot both be followed, a "revisit next week" that never became a date.
+
+[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in seven ways (one per lint check), plus the artifact a lint pass produces over it:
+
+| Defect | Where | What lint proposes |
+|---|---|---|
+| Index line, no file | `MEMORY.md` points at a deleted `reference_build_flags.md` | drop the dead line (high confidence) |
+| File, no index line | `user_timezone.md` is never recalled | add the index line (high confidence) |
+| Hook contradicts the file | index says alerts silenced "for good"; the file says paused, then re-enabled | rewrite the hook from the file (medium) |
+| Duplicate fact | `project_cdn_cutover.md` and `project_cdn_migration.md` are one CDN move in two files | fold the unique detail into one, archive the other (paired proposals) |
+| Stale dates | a DNS flip "scheduled for 2026-05-20," long past; a "revisit next week" never made absolute | convert what has an anchor; flag the rest for a rot pass |
+| Contradiction | "never push straight to prod" vs "for sev-1, push straight to prod" | flag with both files quoted; never auto-resolved |
+| Misfiled type | a how-to-work rule typed `reference` | retype to `feedback` (medium) |
+
+The unresolved `[[incident-runbook]]` link is listed as info only: per [`docs/memory-format.md`](../docs/memory-format.md), an unresolved link is a placeholder for a memory worth writing later, not an error.
+
+See [`lint-pass/REPORT.md`](lint-pass/REPORT.md) for the human-readable summary and [`lint-pass/proposals.json`](lint-pass/proposals.json) for the machine-readable diffs. Same artifact shape as the rot pass, same review gate: `/dream-apply` walks every proposal and nothing changes without you accepting it.

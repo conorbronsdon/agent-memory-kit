@@ -1,0 +1,167 @@
+{
+  "curator": "lint",
+  "ran_at": "2026-06-02T10:14:09Z",
+  "inputs_summary": { "memory_files_audited": 8, "index_entries": 8, "local_paths_verified": 1 },
+  "proposals": [
+    {
+      "id": "lint-001",
+      "check": "index_drift",
+      "action": "modify",
+      "target": "MEMORY.md",
+      "reasoning": "Index line points at reference_build_flags.md, which does not exist in memory/ and has no row in ARCHIVE.md. A dead index line wastes recall budget and erodes trust in the index. Drop it.",
+      "evidence": [
+        "MEMORY.md L22: '- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.'",
+        "checked 2026-06-02: ls memory/reference_build_flags.md: not found; no ARCHIVE.md row mentions it"
+      ],
+      "current_excerpt": "- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.",
+      "proposed_excerpt": "",
+      "confidence": "high"
+    },
+    {
+      "id": "lint-002",
+      "check": "index_drift",
+      "action": "modify",
+      "target": "MEMORY.md",
+      "reasoning": "user_timezone.md exists but has no index line, so it never gets recalled. The User section still holds the placeholder comment; replace it with a real line built from the file's description.",
+      "evidence": [
+        "checked 2026-06-02: memory/user_timezone.md exists; grep 'user_timezone' MEMORY.md: no match",
+        "user_timezone.md L3: 'description: The user is in Europe/Berlin; do scheduling and date math in that zone.'"
+      ],
+      "current_excerpt": "<!-- - [Title](user_slug.md): one-line hook -->",
+      "proposed_excerpt": "- [User timezone](user_timezone.md): user is in Europe/Berlin; schedule and do date math in that zone.",
+      "confidence": "high"
+    },
+    {
+      "id": "lint-003",
+      "check": "index_drift",
+      "action": "modify",
+      "target": "MEMORY.md",
+      "reasoning": "The index hook for project_billing_alerts.md says the alerts are being silenced 'for good'; the file's description says they are paused during the cutover window and then re-enabled. Those are different facts, and the index is what loads every session. The detail file is the authority; rewrite the hook from the description.",
+      "evidence": [
+        "MEMORY.md L17: '- [Billing alerts cleanup](project_billing_alerts.md): silence the legacy Acme billing alerts for good.'",
+        "project_billing_alerts.md L3: 'description: Pause the legacy Acme billing alerts during the CDN cutover window, then re-enable them.'"
+      ],
+      "current_excerpt": "- [Billing alerts cleanup](project_billing_alerts.md): silence the legacy Acme billing alerts for good.",
+      "proposed_excerpt": "- [Billing alerts pause](project_billing_alerts.md): pause the legacy Acme billing alerts during the CDN cutover window, then re-enable them.",
+      "confidence": "medium"
+    },
+    {
+      "id": "lint-004",
+      "check": "duplicate",
+      "action": "modify",
+      "target": "project_cdn_cutover.md",
+      "reasoning": "project_cdn_migration.md is the same fact as project_cdn_cutover.md (one fact per file: this is one CDN move captured twice). The duplicate holds one detail the survivor lacks, the DNS TTL rollback note. Fold it into the survivor before archiving the duplicate. Pairs with lint-005; review them together.",
+      "evidence": [
+        "project_cdn_cutover.md L8: 'Moving static assets off the origin servers onto the new CDN. The cutover is a DNS flip once cache warm-up finishes.'",
+        "project_cdn_migration.md L8: 'Static assets are moving onto the new CDN. Same work as the cutover: warm the cache, then flip DNS.'",
+        "project_cdn_migration.md L10: 'One detail not written down anywhere else: keep the DNS TTL at 300 until a week after the flip, so a rollback propagates in minutes.'"
+      ],
+      "current_excerpt": "**How to apply:** until the flip is confirmed, treat the CDN as untrusted and keep origin URLs in anything user-facing.",
+      "proposed_excerpt": "**How to apply:** until the flip is confirmed, treat the CDN as untrusted and keep origin URLs in anything user-facing. Keep the DNS TTL at 300 until a week after the flip, so a rollback propagates in minutes.",
+      "confidence": "medium"
+    },
+    {
+      "id": "lint-005",
+      "check": "duplicate",
+      "action": "archive",
+      "target": "project_cdn_migration.md",
+      "reasoning": "Duplicate of project_cdn_cutover.md; same migration, second file. Once lint-004 folds the TTL note into the survivor, nothing here is unique. Archive it and drop its index line. Pairs with lint-004; accept that one first.",
+      "evidence": [
+        "project_cdn_migration.md L3: 'description: Migration of static assets onto the new CDN.'",
+        "project_cdn_cutover.md L3: 'description: Static assets moving off origin onto the new CDN, status and constraints.'",
+        "MEMORY.md L15-L16: both files indexed as separate Project entries"
+      ],
+      "current_excerpt": "Static assets are moving onto the new CDN. Same work as the cutover: warm the cache, then flip DNS.",
+      "proposed_excerpt": "",
+      "confidence": "medium"
+    },
+    {
+      "id": "lint-006",
+      "check": "staleness",
+      "action": "flag",
+      "target": "project_cdn_cutover.md",
+      "reasoning": "The status line says the DNS flip is 'scheduled for 2026-05-20' and to check propagation the morning after. That date is 13 days past and the file records no outcome. Lint cannot know whether the flip happened; run /dream rot against state/ and sessions/ to cross-check and rewrite the status.",
+      "evidence": [
+        "project_cdn_cutover.md L10: '**Status (2026-05-18):** cache warm-up running. DNS flip scheduled for 2026-05-20; check propagation the morning after the flip.'",
+        "ran_at 2026-06-02: the scheduled date passed with no recorded outcome in the file"
+      ],
+      "current_excerpt": "**Status (2026-05-18):** cache warm-up running. DNS flip scheduled for 2026-05-20; check propagation the morning after the flip.",
+      "proposed_excerpt": "",
+      "confidence": "medium"
+    },
+    {
+      "id": "lint-007",
+      "check": "staleness",
+      "action": "modify",
+      "target": "project_billing_alerts.md",
+      "reasoning": "'Revisit next week' is a relative date that was never converted to absolute, against the writing rules in docs/memory-format.md. The status line is anchored at 2026-05-18, so 'next week' converts to 'by 2026-05-25'. Note: the converted date has itself already passed, so this file is also a rot candidate after the conversion.",
+      "evidence": [
+        "project_billing_alerts.md L10: '**Status (2026-05-18):** alerts still live. Revisit next week, after the DNS flip settles.'",
+        "docs/memory-format.md, writing rules: 'Absolute dates, never relative.'"
+      ],
+      "current_excerpt": "**Status (2026-05-18):** alerts still live. Revisit next week, after the DNS flip settles.",
+      "proposed_excerpt": "**Status (2026-05-18):** alerts still live. Revisit by 2026-05-25, after the DNS flip settles.",
+      "confidence": "medium"
+    },
+    {
+      "id": "lint-008",
+      "check": "contradiction",
+      "action": "flag",
+      "target": "feedback_staging_first.md",
+      "reasoning": "feedback_staging_first.md says never push an image straight to prod. feedback_hotfix_direct.md says for sev-1 incidents, push straight to prod. Both are indexed, both load every session, and an agent following one violates the other. They probably reconcile into one rule with an explicit sev-1 exception, but which way the rule goes is the user's call, never the curator's.",
+      "evidence": [
+        "feedback_staging_first.md L8: 'Every deploy goes through staging first. Never push an image straight to prod.'",
+        "feedback_hotfix_direct.md L8: 'For sev-1 incidents, push the fixed image straight to prod. Backfill staging once the incident closes.'"
+      ],
+      "current_excerpt": "Every deploy goes through staging first. Never push an image straight to prod.",
+      "proposed_excerpt": "Every deploy goes through staging first; never push an image straight to prod, with one exception: sev-1 incident fixes go straight to prod and backfill staging after the incident closes (see [[feedback-hotfix-direct]]).",
+      "confidence": "low"
+    },
+    {
+      "id": "lint-009",
+      "check": "unverifiable_reference",
+      "action": "flag",
+      "target": "reference_key_rotation.md",
+      "reasoning": "The memory's load-bearing pointer, scripts/rotate-keys.sh, does not exist in the repo. The rotation procedure may have moved or been retired; the human knows which. Until fixed, an agent following this memory hits a dead end mid-task.",
+      "evidence": [
+        "reference_key_rotation.md L8: 'Rotate the staging API keys with `scripts/rotate-keys.sh` from the repo root.'",
+        "checked 2026-06-02: test -e scripts/rotate-keys.sh: not found; git ls-files scripts/: no match"
+      ],
+      "current_excerpt": "Rotate the staging API keys with `scripts/rotate-keys.sh` from the repo root. Takes about a minute; the old keys stay valid for an hour after rotation.",
+      "proposed_excerpt": "",
+      "confidence": "high"
+    },
+    {
+      "id": "lint-010",
+      "check": "type_misfile",
+      "action": "modify",
+      "target": "reference_pr_reviews.md",
+      "reasoning": "Typed reference, but the content is a rule about how the agent should work (request platform review when an infra PR opens), which is the feedback type. The type drives curation: rot audits reference memories for dead pointers and mostly skips feedback, so the misfile gets this memory the wrong treatment. Manual follow-ups the apply step cannot do: rename the file to feedback_pr_reviews.md and move its index line to the Feedback section.",
+      "evidence": [
+        "reference_pr_reviews.md L5: '  type: reference'",
+        "reference_pr_reviews.md L8: 'Any PR touching infra (Terraform, deploy scripts, CI config) needs a review from the platform team before merge.'",
+        "docs/memory-format.md, the four types: feedback is 'guidance on how the agent should work'; reference is 'pointers to external resources'"
+      ],
+      "current_excerpt": "  type: reference",
+      "proposed_excerpt": "  type: feedback",
+      "confidence": "medium"
+    },
+    {
+      "id": "lint-011",
+      "check": "unresolved_link",
+      "action": "flag",
+      "target": "project_cdn_cutover.md",
+      "reasoning": "[[incident-runbook]] resolves to no memory file. Per docs/memory-format.md this is a placeholder, not an error: it marks a memory worth writing later. Listed for visibility only; no change proposed.",
+      "evidence": [
+        "project_cdn_cutover.md L16: 'Related: [[incident-runbook]] (where the rollback steps will live).'",
+        "checked 2026-06-02: no memory file has name: incident-runbook or a matching filename stem"
+      ],
+      "current_excerpt": "Related: [[incident-runbook]] (where the rollback steps will live).",
+      "proposed_excerpt": "",
+      "confidence": "low"
+    }
+  ],
+  "skipped": [
+    { "target": "user_timezone.md", "reason": "Content is clean; its only issue (missing index line) is filed against MEMORY.md as lint-002." }
+  ]
+}

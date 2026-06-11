@@ -14,6 +14,8 @@ This is the curation loop, on its own. Plain markdown and JSON. No vector store,
 
 `/end` and `/start` run every session. `/dream` runs weekly-ish. `/update` is a lightweight mid-session checkpoint.
 
+Two curators ship today: `rot` (does each memory still match the world?) and `lint` (is the store itself well-formed: index in sync, no duplicates, no contradictions, no dead references?). Run them as `/dream rot` and `/dream lint`.
+
 Capture has a demo moment. Curation does not. It just quietly stops your agent from being confidently wrong next week. That is the whole bet.
 
 **[See it work](examples/)** below, or jump to the **[2-minute quickstart](#quickstart)**.
@@ -81,6 +83,7 @@ agent-memory-kit: scaffolding into /home/you/my-context
   wrote: .claude/commands/dream-apply.md
   commands installed to: /home/you/my-context/.claude/commands
   wrote: prompts/rot.md
+  wrote: prompts/lint.md
   wrote: memory/MEMORY.md
   wrote: memory/ARCHIVE.md
   memory git: initialized + seeded (local-only, no remote)
@@ -96,7 +99,7 @@ Done. Next:
 Manual install, if you'd rather wire it yourself:
 
 1. Copy `commands/*.md` into your project's `.claude/commands/` (or `~/.claude/commands/` for global).
-2. Copy `prompts/rot.md` into the project root's `prompts/` (where `/dream` reads it).
+2. Copy `prompts/*.md` (the curator prompts) into the project root's `prompts/` (where `/dream` reads them).
 3. Scaffold your context from `context-starter/` (see [Quickstart](#quickstart)).
 4. Point the kit at a memory directory (see [Memory directory resolution](#memory-directory-resolution)).
 
