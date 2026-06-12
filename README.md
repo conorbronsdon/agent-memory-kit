@@ -143,6 +143,16 @@ Keep the memory repo **local-only** if it holds anything private. No remote. The
 
 The capture/recall framing owes to the public conversation on agent memory (memory-as-first-class-primitive; "don't delete, forget" / decay scoring). The curator-pass idea echoes NousResearch's Hermes "curator" passes and Anthropic's "dreaming" preview. This kit's contribution is the smallest substrate that runs the curator pass today: markdown in, evidence-cited JSON diffs out, human in the loop, git underneath.
 
+## About
+
+Built by [Conor Bronsdon](https://conorbronsdon.com). I host the [Chain of Thought](https://chainofthought.show) podcast on AI infrastructure and developer tools; this kit came out of running agent memory in production across my own repos and watching it rot. More tools like this: [ai-tools-for-creators](https://github.com/conorbronsdon/ai-tools-for-creators) and [claude-code-skills](https://github.com/conorbronsdon/claude-code-skills). Find me on [X](https://x.com/ConorBronsdon).
+
 ## License
 
 MIT (see [`LICENSE`](LICENSE)).
+
+---
+
+## Disclaimer
+
+*All views, opinions, and statements expressed on this account are solely my own and are made in my personal capacity. They do not reflect, and should not be construed as reflecting, the views, positions, or policies of Modular. This account is not affiliated with, authorized by, or endorsed by Modular in any way.*
