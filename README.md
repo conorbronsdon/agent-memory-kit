@@ -1,4 +1,14 @@
+<div align="center">
+
 # agent-memory-kit
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Podcast](https://img.shields.io/badge/Podcast-Chain_of_Thought-purple?style=flat-square)](https://chainofthought.show)
+[![X](https://img.shields.io/badge/X-@ConorBronsdon-black?style=flat-square&logo=x)](https://x.com/ConorBronsdon)
+
+</div>
+
+---
 
 ![A /dream lint pass in Claude Code: seven structural checks over the memory store, then evidence-cited proposals — synthetic fixture data from examples/lint-pass](docs/demo.gif)
 
@@ -152,12 +162,12 @@ The capture/recall framing owes to the public conversation on agent memory (memo
 
 Built by [Conor Bronsdon](https://conorbronsdon.com). I host the [Chain of Thought](https://chainofthought.show) podcast on AI infrastructure and developer tools; this kit came out of running agent memory in production across my own repos and watching it rot. More tools like this: [ai-tools-for-creators](https://github.com/conorbronsdon/ai-tools-for-creators) and [claude-code-skills](https://github.com/conorbronsdon/claude-code-skills). Find me on [X](https://x.com/ConorBronsdon).
 
-## License
-
-MIT (see [`LICENSE`](LICENSE)).
-
 ---
 
 ## Disclaimer
 
 *All views, opinions, and statements expressed on this account are solely my own and are made in my personal capacity. They do not reflect, and should not be construed as reflecting, the views, positions, or policies of Modular. This account is not affiliated with, authorized by, or endorsed by Modular in any way.*
+
+## License
+
+MIT (see [`LICENSE`](LICENSE)).
