@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # init.sh - scaffold a context repo wired for agent-memory-kit.
 #
-# Installs the slash commands, the curator prompt, a starter context tree,
+# Installs the slash commands, the curator prompts, a starter context tree,
 # and git-inits the memory dir (the load-bearing step you don't want to forget).
 # Idempotent: existing files are left alone unless you pass --force.
 #
@@ -82,8 +82,10 @@ for c in start end update dream dream-apply; do
 done
 echo "  commands installed to: $CMD_DIR"
 
-# --- 3. curator prompt (read by /dream relative to cwd) --------------------
-place "$SCRIPT_DIR/prompts/rot.md" "$TARGET/prompts/rot.md"
+# --- 3. curator prompts (read by /dream relative to cwd) -------------------
+for p in rot lint; do
+  place "$SCRIPT_DIR/prompts/$p.md" "$TARGET/prompts/$p.md"
+done
 
 # --- 4. memory dir: scaffold + git init (local-only) -----------------------
 mkdir -p "$MEMORY_DIR"

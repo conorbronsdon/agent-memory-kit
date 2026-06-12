@@ -13,6 +13,7 @@ Read-only curator over your memory + recent history. Produces a reviewable propo
 ```
 /dream                # default curator: rot
 /dream rot            # explicit
+/dream lint           # structural integrity: index drift, duplicates, contradictions, dead references
 /dream pattern        # if prompts/pattern.md exists
 ```
 
@@ -38,7 +39,7 @@ Read `prompts/{curator}.md` in full — it's your role + output schema for the r
 
 ## 5. Gather inputs (read-only)
 
-Per the curator's required inputs (rot needs all):
+Per the curator's required inputs (rot needs all of these; lint needs only the memory dir plus cheap existence checks, per its prompt):
 - `ls $MEMORY_DIR/*.md` and read each `project_*` / `reference_*` (skip `user_`/`feedback_` unless the curator asks).
 - Read `state/*.md` (decisions, blockers, current — whichever exist).
 - `find sessions/ -name "*.md" -mtime -14` and read each.
