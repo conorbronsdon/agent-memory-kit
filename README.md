@@ -32,9 +32,6 @@ Capture has a demo moment. Curation does not. It just quietly stops your agent f
 
 **[See it work](examples/)** below, or jump to the **[2-minute quickstart](#quickstart)**.
 
-<!-- CONOR: essay URL after publish -->
-Paired essay: "I Gave My Agent a Memory. Two Weeks Later It Was Lying to Me." (Substack link to come.)
-
 ## See it work
 
 `examples/` ships a synthetic before/after so you can see the payoff before you run anything.
