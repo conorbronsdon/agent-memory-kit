@@ -35,7 +35,7 @@ A typed, database-backed memory layer. Core abstractions: `MemAgent` (the agent)
 
 ## Where we diverge — and why it matters
 
-memorizz documents memory **retention** and **retrieval**. Searched directly, its README documents **no forgetting, decay, consolidation, relevance-scoring, or pruning pass** (checked 2026-06-03; if memorizz has shipped one since, this comparison is happy to be wrong). This is not a knock — it's the pattern across the whole space, and it's the gap this kit targets.
+memorizz documents memory **retention** and **retrieval**. Searched directly, its README documents **no forgetting, decay, consolidation, relevance-scoring, or pruning pass** (re-checked 2026-07-05; if memorizz has shipped one since, this comparison is happy to be wrong). This is not a knock — it's the pattern across the whole space, and it's the gap this kit targets.
 
 The irony is instructive: the person who gave me the line "don't delete, **forget**" (a framing that traces back to MemGPT/Letta's decay-over-deletion design) ships a typed, persistent memory layer where, by the README, the forgetting is left to the user. That's not an oversight, it's the shape of the problem. Forgetting is the hard, unglamorous, demo-less half of memory, so almost nobody ships it.
 
