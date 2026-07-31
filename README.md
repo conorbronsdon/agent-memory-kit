@@ -3,7 +3,7 @@
 # agent-memory-kit
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-[![Podcast](https://img.shields.io/badge/Podcast-Chain_of_Thought-purple?style=flat-square)](https://chainofthought.show)
+[![Podcast](https://img.shields.io/badge/Podcast-Chain_of_Thought-purple?style=flat-square)](https://chainofthought.show/?utm_source=github&utm_medium=referral&utm_campaign=repo-readme&utm_content=agent-memory-kit)
 [![X](https://img.shields.io/badge/X-@ConorBronsdon-black?style=flat-square&logo=x)](https://x.com/ConorBronsdon)
 
 </div>
@@ -157,7 +157,7 @@ The capture/recall framing owes to the public conversation on agent memory (memo
 
 ## About
 
-Built by [Conor Bronsdon](https://conorbronsdon.com). I host the [Chain of Thought](https://chainofthought.show) podcast on AI infrastructure and developer tools; this kit came out of running agent memory in production across my own repos and watching it rot. More tools like this: [ai-tools-for-creators](https://github.com/conorbronsdon/ai-tools-for-creators) and [claude-code-skills](https://github.com/conorbronsdon/claude-code-skills). Find me on [X](https://x.com/ConorBronsdon).
+Built by [Conor Bronsdon](https://conorbronsdon.com/?utm_source=github&utm_medium=referral&utm_campaign=repo-readme&utm_content=agent-memory-kit). I host the [Chain of Thought](https://chainofthought.show/?utm_source=github&utm_medium=referral&utm_campaign=repo-readme&utm_content=agent-memory-kit) podcast on AI infrastructure and developer tools; this kit came out of running agent memory in production across my own repos and watching it rot. More tools like this: [ai-tools-for-creators](https://github.com/conorbronsdon/ai-tools-for-creators) and [claude-code-skills](https://github.com/conorbronsdon/claude-code-skills). Find me on [X](https://x.com/ConorBronsdon).
 
 ---
 
