@@ -125,7 +125,9 @@ your-context-repo/
 │   └── YYYY-MM-DD.md        # append-only episodic log, written by /end
 └── memory/                 # durable, cross-session facts (its own git repo)
     ├── MEMORY.md           # the index, loaded every session (cap ~100 lines)
-    └── {topic}.md          # detail files, loaded on demand
+    ├── ARCHIVE.md          # tombstone rows for retired memories
+    ├── {topic}.md          # live detail files, loaded on demand
+    └── archive/            # retired files, stamped `archived: YYYY-MM-DD`
 ```
 
 `init.sh` builds this for you. To do it by hand: copy the `context-starter/` tree, fill in `CONTEXT.md` and `state/current.md`, then `git init` inside `memory/`:

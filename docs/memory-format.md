@@ -58,6 +58,8 @@ In a detail file's body, link related memories with `[[slug]]`. Link liberally. 
 - **Absolute dates, never relative.** "by 2026-06-10," not "by next Tuesday." Relative dates are rot waiting to happen.
 - **Check for an existing file first.** Update the file that already covers it rather than creating a duplicate.
 - **Don't save what the repo already records.** Code structure, past fixes, git history, and anything already in `CONTEXT.md` are not memories.
+`archived: YYYY-MM-DD` appears in the frontmatter of retired files only — written when the file moves to `archive/`, and the reason a later session can tell it is not live.
+
 - **Delete memories that turn out wrong.** A wrong memory is a liability, not history. (History goes to `ARCHIVE.md` only when the entry was *once* true.)
 
 ## The friction-point heuristic (when to capture)
