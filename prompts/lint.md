@@ -6,7 +6,7 @@
 
 ## Inputs (read-only; you may NOT modify any of these)
 
-- Every file in `$MEMORY_DIR`: the detail files, `MEMORY.md` (the index), and `ARCHIVE.md` if present.
+- Every file in the **root** of `$MEMORY_DIR`: the live detail files, `MEMORY.md` (the index), and `ARCHIVE.md` if present. **Skip `$MEMORY_DIR/archive/` entirely** — retired files have no index line by design, so scanning them turns every past archive into a false finding.
 - Cheap existence checks for local paths that memories name: `ls`, `test -e`, `git ls-files`. Read-only shell only. Do not fetch URLs.
 - Optional, when run inside a work repo: `git log --oneline -30`, for the shipped-work heuristic in check 3.
 
@@ -21,8 +21,8 @@ Run all seven, in order. Every finding needs: action, evidence (file plus line),
 The index (`MEMORY.md`) and the detail files must agree. Four sub-checks:
 
 - **Index line, no file.** A `[Title](slug.md)` line whose file does not exist. Includes archived memories whose index line was never dropped (cross-check `ARCHIVE.md`). Action: `modify` targeting `MEMORY.md`, dropping the line. Confidence: high (mechanical).
-- **File, no index line.** A detail file with no line in the index. It is invisible at recall time, which defeats the point of capturing it. Action: `modify` targeting `MEMORY.md`, adding a line under the right type heading. Confidence: high.
-- **Half-finished archive.** A file listed in `ARCHIVE.md` that is still sitting in the memory root, with no `archived:` stamp in its frontmatter. This is the highest-value check in the group, because it fails *silently in the wrong direction*: nothing was lost, so no backup flags it, and every session keeps reading a retired memory as current. The tell downstream is a curator proposing to archive something that was archived weeks ago — it has no way to see the earlier row. Action: `modify` naming the file, with the fix being stamp + move to `archive/` + repoint inbound links. Confidence: high (mechanical — the row and the missing stamp are both greppable).
+- **File, no index line.** A live detail file with no line in the index. It is invisible at recall time, which defeats the point of capturing it. Action: `modify` targeting `MEMORY.md`, adding a line under the right type heading. Confidence: high. **Files under `archive/` are exempt** — losing the index line is the last step of retiring one.
+- **Half-finished archive.** A file listed in `ARCHIVE.md` that is still sitting in the memory root, with no `archived:` stamp in its frontmatter. It fails in the wrong direction: nothing was lost, so no backup flags it, and every session keeps reading a retired memory as current. The tell is a curator proposing to archive something that was retired weeks ago, with no way to see the earlier row. Action: `modify` naming the file, with the fix being stamp + move to `archive/` + repoint inbound links. Confidence: high (mechanical — the row and the missing stamp are both greppable).
 - **Hook does not match the file.** The index hook and the file's frontmatter `description` say materially different things (not paraphrase; different facts). The detail file is the authority; the hook follows it. Action: `modify` targeting `MEMORY.md`, rewriting the hook from the description. Confidence: medium. If the file looks wrong and the hook looks right, `flag` instead; that is a content question, not an index question.
 
 Mechanics for index proposals: `target` is `MEMORY.md`, `current_excerpt` is the exact existing line (or the placeholder comment / section heading when adding a line), `proposed_excerpt` is the replacement. That keeps the proposal applyable by `/dream-apply`'s excerpt-swap.
