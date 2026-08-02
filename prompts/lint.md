@@ -14,7 +14,7 @@ Unlike rot, lint does not need `state/` or `sessions/`. It runs standalone again
 
 ## The checks
 
-Run all seven, in order. Every finding needs: action, evidence (file plus line), confidence.
+Run all twelve, in order. Every finding needs: action, evidence (file plus line), confidence.
 
 ### 1. Index drift
 
@@ -60,13 +60,37 @@ Memories that name local paths, scripts, or files: verify each with `test -e` / 
 
 The four types drive curation (`docs/memory-format.md`): `user` is who the user is, `feedback` is how the agent should work, `project` is in-flight work, `reference` is pointers to external resources. A misfiled memory gets the wrong curation treatment; rot audits `project`/`reference` hardest and mostly skips `feedback`/`user`, so a project status filed as `feedback` escapes every rot pass. Common misfiles: a working rule filed as `reference`; in-flight status filed as `user` or `feedback`; an external pointer filed as `project`. Action: `modify` the frontmatter `type` line, confidence medium. Note in the reasoning the manual follow-ups the apply step cannot do: the filename keeps its old prefix until the human renames it, and the index line should move to the right section.
 
+### 8. Index-only content
+
+An index line with **no link to a detail file** — the fact exists nowhere else. It is the single most losable thing in the store: `MEMORY.md` truncates newest-first at the byte cap, so this line's content is deleted with no tombstone and no git-recoverable file behind it. Grep the index for lines with no `](…)` link. Action: `flag` (the fix is to create the detail file and shorten the line to a pointer, which needs a human to decide the split). Confidence: high — the absence is mechanical.
+
+### 9. Byte budget, not line budget
+
+`MEMORY.md` has both a line cap and a **byte** cap, and the byte cap almost always binds first. Report `wc -l -c` against both. Then split the bytes: total, bytes inside `](…)` link syntax, and prose outside it. **Link plumbing is irreducible without orphaning memories**, so a target below the link-syntax floor is unreachable and asking for it produces lossy make-work. If the index is over budget, say what fraction is reducible before recommending a trim. Action: `flag` with the numbers. Confidence: high.
+
+### 10. Half-finished and duplicated archives
+
+Three related failures around retirement, all mechanical:
+
+- **Half-finished archive.** A file listed in `ARCHIVE.md`, still in the memory root, with no `archived:` stamp. Covered under Index drift; repeated here because it is the root cause of the next two.
+- **Duplicate archive rows.** The same filename appearing in more than one `ARCHIVE.md` row. This is never a new finding — it means an earlier archive skipped the stamp, so a later curator could not tell the file was already retired and archived it again. Action: `modify` `ARCHIVE.md`, keeping the **earliest** row (that is the true retirement date) and dropping the rest.
+- **Tombstone with no file and no `DELETED` marker.** A row pointing at a path that does not exist, not marked as a deletion. Either the file was removed silently — check whether any live memory still links the slug — or the row's link needs the `archive/` prefix. Action: `modify`, confidence high.
+
+### 11. Retired-pointer drift
+
+A memory that routes work to a tracker — an issue number, a ticket, a URL — which has since been closed, superseded, or consolidated elsewhere. This does not look stale: the surrounding prose is accurate, only the destination is dead, so a reader follows it and finds nothing. Flag any issue or ticket reference in a `project` memory that the repo's own history shows closed as not-planned or superseded. Action: `flag` with the successor if you can find it; `modify` only when the successor is stated explicitly in the closing comment. Confidence: medium — verifying a tracker's state usually needs a call the curator should not make silently.
+
+### 12. Build-log bloat
+
+A `project` memory carrying a per-session or per-release changelog that the project's own repo already keeps (`CHANGELOG`, `docs/`, PR history). Symptoms: several version strings, "Session N" or "shipped vX" headings, and PR-number status that goes stale the moment anything merges. These files also drift internally — one session's block claims a version a later block contradicts. The durable content is the rules and the lessons; the log belongs in the repo. Action: `flag` naming which paragraphs are log and which are durable. Confidence: medium — what counts as durable is a judgment call.
+
 ## Output
 
 Write `proposals.json` and `REPORT.md` to `{MEMORY_DIR}/.dreams/{ISO-timestamp}/`.
 
 ### `proposals.json`
 
-Same schema as every curator (`docs/curation.md`), plus a `check` field naming which of the seven checks fired, so findings group cleanly:
+Same schema as every curator (`docs/curation.md`), plus a `check` field naming which of the twelve checks fired, so findings group cleanly:
 
 ```json
 {
