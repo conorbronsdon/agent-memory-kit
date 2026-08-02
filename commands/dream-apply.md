@@ -40,7 +40,14 @@ b. Ask via `AskUserQuestion`: **Accept / Reject / Edit then accept / Skip rest**
 
 c. On **Accept**:
    - `modify` → Edit `memory/{target}`, replacing `current_excerpt` with `proposed_excerpt`.
-   - `archive` → append `| {today} | {target} | {one-line reason} |` to `memory/ARCHIVE.md`, drop the index line from `memory/MEMORY.md`, leave the `.md` in place.
+   - `archive` → all five steps. An archive that stops early leaves the file reading as live:
+     1. **Refuse if already archived** — `grep "^archived:" memory/{target}`, and check `memory/ARCHIVE.md` for the filename. A hit means a previous archive skipped steps 3-4; report that rather than writing a second row.
+     2. Append `| {today} | [{target}](archive/{target}) | {one-line reason} |` to `memory/ARCHIVE.md`.
+     3. **Stamp it**: add `archived: {today}` as the last line of the file's frontmatter. This is what stops a later session reading it as live.
+     4. **Move it**: `git mv memory/{target} memory/archive/{target}`, then repoint inbound references in the live set — `]({slug}.md)` → `](archive/{slug}.md)`, `[[{slug}]]` → `[{slug}](archive/{slug}.md)`. Grep for the slug; don't assume the proposal listed them.
+     5. Drop the index line from `memory/MEMORY.md` — unless the reference is a sub-link inside another entry, where it just needs the `archive/` prefix. An archived file cited as evidence for a live rule is a legitimate link.
+
+     Never `rm` an archived file: it stays readable under `archive/` for on-demand recall.
    - `add` → create the new memory file with proposed content, add an index line to `memory/MEMORY.md`.
    - `flag` → write nothing (flags only surface).
 

@@ -49,7 +49,7 @@ Apply — separate command, human-gated
 
 Actions:
 - `modify` — assertion is wrong; rewrite to current truth (cite evidence).
-- `archive` — entire memory is now historical; append to `ARCHIVE.md`, drop the index line (confirm via 2+ sources).
+- `archive` — entire memory is now historical; append to `ARCHIVE.md`, stamp `archived:` into the file's frontmatter, move it to `memory/archive/`, repoint inbound links, then drop the index line (confirm via 2+ sources). All five, or the file keeps reading as live.
 - `add` — new memory candidate (pattern curator); requires the pattern appear in 3+ sessions.
 - `flag` — rot/contradiction suspected but ambiguous; surface to a human, never auto-resolve.
 

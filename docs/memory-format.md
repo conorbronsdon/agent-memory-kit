@@ -7,8 +7,10 @@ One fact per file. A small index loads every session; detail files load on deman
 ```
 memory/
 ├── MEMORY.md          # index — one line per memory, loaded EVERY session. Cap ~100 lines.
-├── ARCHIVE.md         # superseded/pruned entries (kept for history, not loaded)
-└── {slug}.md          # one detail file per fact, loaded on demand
+├── ARCHIVE.md         # tombstone rows, one per retired memory
+├── {slug}.md          # one LIVE detail file per fact, loaded on demand
+└── archive/
+    └── {slug}.md      # retired files, each stamped `archived: YYYY-MM-DD`
 ```
 
 `MEMORY.md` is the only file loaded into every conversation, so it has a hard line budget (default ~100 lines). When it approaches the cap, consolidate or archive. Detail files are exempt — they're pulled only when relevant.
