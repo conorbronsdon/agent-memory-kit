@@ -40,7 +40,25 @@ b. Ask via `AskUserQuestion`: **Accept / Reject / Edit then accept / Skip rest**
 
 c. On **Accept**:
    - `modify` → Edit `memory/{target}`, replacing `current_excerpt` with `proposed_excerpt`.
-   - `archive` → append `| {today} | {target} | {one-line reason} |` to `memory/ARCHIVE.md`, drop the index line from `memory/MEMORY.md`, leave the `.md` in place.
+   - `archive` → all five steps. An archive that stops early leaves the file reading as live:
+     1. **Refuse if already archived** — `test -f memory/archive/{target}`, and `grep -F "](archive/{target})" memory/ARCHIVE.md`. A hit on either means it is already retired; stop.
+        Do **not** grep `ARCHIVE.md` for the bare filename: merge tombstones name the surviving file and split tombstones name the children, and those are live. Separately, a file still in the root that already carries an `^archived:` stamp is a crashed earlier run — finish steps 4-5, don't start over.
+     2. Append `| {today} | [{target}](archive/{target}) | {one-line reason} |` to `memory/ARCHIVE.md`.
+     3. **Stamp it**: add `archived: {today}` as the last line of the file's frontmatter. This is what stops a later session reading it as live.
+     4. **Move it.** `git mv` does not create the destination, and the memory dir is its own git repo — so both, from inside it:
+        ```sh
+        mkdir -p "$MEMORY_DIR/archive"
+        git -C "$MEMORY_DIR" mv "{target}" "archive/{target}"
+        ```
+        Skipping either kills the step at exit 128 *after* the row and stamp are written, creating the half-finished state this exists to prevent.
+
+        Then repoint links, where `{slug}` is `{target}` without `.md`:
+        - Inbound, live files **except `MEMORY.md`** (step 5 owns that line): `]({slug}.md)` → `](archive/{slug}.md)`, `[[{slug}]]` → `[{slug}](archive/{slug}.md)`. Grep for the slug.
+        - Outbound, inside the moved file: `](x.md)` → `](../x.md)` for live targets; `](archive/x.md)` → `](x.md)` for already-retired ones.
+        - Leave unresolved `[[links]]` alone — those are deliberate placeholders.
+     5. Drop the index line from `memory/MEMORY.md` — unless the reference is a sub-link inside another entry, where it just needs the `archive/` prefix. An archived file cited as evidence for a live rule is a legitimate link.
+
+     Never `rm` an archived file: it stays readable under `archive/` for on-demand recall.
    - `add` → create the new memory file with proposed content, add an index line to `memory/MEMORY.md`.
    - `flag` → write nothing (flags only surface).
 

@@ -26,7 +26,7 @@ For each `memory/project_*.md` and `memory/reference_*.md` (skip `user_`, `feedb
    - **Missing follow-through** — memory says "next: do X," no evidence of X across 14d of sessions or commits.
 3. Classify:
    - **`modify`** — assertion is wrong; rewrite to current truth. Cite specific evidence line(s).
-   - **`archive`** — the whole memory is now historical (work complete, decision moot). Confirm via 2+ evidence sources.
+   - **`archive`** — the whole memory is now historical (work complete, decision moot). Confirm via 2+ evidence sources, **and count how many live memories link to it**. Heavy inbound linkage is evidence the memory is still load-bearing — re-read its current body against your archive rationale before proposing. Archiving on a premise that has since gone stale, while live memories still depend on the file, is worse than leaving it live too long.
    - **`flag`** — rot suspected but evidence ambiguous; surface for a human decision. Explain what's ambiguous.
 4. **Do not propose anything you can't cite evidence for.** Empty-evidence proposals get rejected at apply time.
 

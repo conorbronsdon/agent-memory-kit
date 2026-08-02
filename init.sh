@@ -97,8 +97,19 @@ ARCHIVE_DST="$MEMORY_DIR/ARCHIVE.md"
 if [ -e "$ARCHIVE_DST" ] && [ "$FORCE" -eq 0 ]; then
   echo "  skip (exists): ${ARCHIVE_DST#$TARGET/}"
 else
-  printf '# Archive\n\nSuperseded memories. Kept for history, not loaded each session.\n\n| date | memory | reason |\n|---|---|---|\n' > "$ARCHIVE_DST"
+  printf '# Archive\n\nTombstone rows for retired memories. The files themselves live in `archive/`,\neach stamped `archived: YYYY-MM-DD`. A row on its own is not an archive — without\nthe stamp and the move, the file stays in the memory root and reads as live.\n\n| date | memory | reason |\n|---|---|---|\n' > "$ARCHIVE_DST"
   echo "  wrote: ${ARCHIVE_DST#$TARGET/}"
+fi
+
+# archive/ must exist before the first retirement: `git mv x.md archive/x.md`
+# does NOT create it and dies at exit 128 mid-procedure. .gitkeep because git
+# does not track empty directories, and the seed commit below would drop it.
+mkdir -p "$MEMORY_DIR/archive"
+if [ -e "$MEMORY_DIR/archive/.gitkeep" ]; then
+  echo "  skip (exists): ${MEMORY_DIR#$TARGET/}/archive/.gitkeep"
+else
+  : > "$MEMORY_DIR/archive/.gitkeep"
+  echo "  wrote: ${MEMORY_DIR#$TARGET/}/archive/.gitkeep"
 fi
 
 if [ -d "$MEMORY_DIR/.git" ]; then

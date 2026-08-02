@@ -7,8 +7,10 @@ One fact per file. A small index loads every session; detail files load on deman
 ```
 memory/
 ├── MEMORY.md          # index — one line per memory, loaded EVERY session. Cap ~100 lines.
-├── ARCHIVE.md         # superseded/pruned entries (kept for history, not loaded)
-└── {slug}.md          # one detail file per fact, loaded on demand
+├── ARCHIVE.md         # tombstone rows, one per retired memory
+├── {slug}.md          # one LIVE detail file per fact, loaded on demand
+└── archive/
+    └── {slug}.md      # retired files, each stamped `archived: YYYY-MM-DD`
 ```
 
 `MEMORY.md` is the only file loaded into every conversation, so it has a hard line budget (default ~100 lines). When it approaches the cap, consolidate or archive. Detail files are exempt — they're pulled only when relevant.
@@ -56,6 +58,8 @@ In a detail file's body, link related memories with `[[slug]]`. Link liberally. 
 - **Absolute dates, never relative.** "by 2026-06-10," not "by next Tuesday." Relative dates are rot waiting to happen.
 - **Check for an existing file first.** Update the file that already covers it rather than creating a duplicate.
 - **Don't save what the repo already records.** Code structure, past fixes, git history, and anything already in `CONTEXT.md` are not memories.
+`archived: YYYY-MM-DD` appears in the frontmatter of retired files only — written when the file moves to `archive/`, and the reason a later session can tell it is not live.
+
 - **Delete memories that turn out wrong.** A wrong memory is a liability, not history. (History goes to `ARCHIVE.md` only when the entry was *once* true.)
 
 ## The friction-point heuristic (when to capture)
