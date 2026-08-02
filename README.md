@@ -95,6 +95,7 @@ agent-memory-kit: scaffolding into /home/you/my-context
   wrote: prompts/lint.md
   wrote: memory/MEMORY.md
   wrote: memory/ARCHIVE.md
+  wrote: memory/archive/.gitkeep
   memory git: initialized + seeded (local-only, no remote)
 
 Done. Next:
