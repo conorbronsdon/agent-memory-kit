@@ -14,12 +14,12 @@
    - Suggested action: modify (add a User line built from the file's description).
 3. **project_image_pipeline.md** [index_drift] — tombstoned in `ARCHIVE.md` on 2026-05-21 but still sitting in the memory root, unstamped, so every session still reads it as live.
    - Evidence: two ARCHIVE.md rows link `archive/project_image_pipeline.md`; `test -f archive/project_image_pipeline.md` fails, the root copy exists, and it has no `archived:` line.
-   - Suggested action: modify (finish the archive: stamp, move to `archive/`, repoint inbound links, drop the index line).
+   - Suggested action: archive (resume the crashed run — stamp with the row's date, move to `archive/`, repoint inbound links, drop the index line; no new row). A `modify` would stamp without moving, which hides the file from this very check.
 4. **ARCHIVE.md** [duplicate_archive_row] — `project_image_pipeline.md` is tombstoned twice, 2026-05-21 and 2026-05-29. The second row is a re-run, not a second retirement.
-   - Evidence: `grep -o ']([^)]*)' ARCHIVE.md | sort | uniq -d` returns `](archive/project_image_pipeline.md)`; rows at L10 and L11.
+   - Evidence: `grep '^| 20' ARCHIVE.md | cut -d'|' -f3 | grep -o '](archive/[^)]*)' | sort | uniq -d` returns `](archive/project_image_pipeline.md)`; rows at L10 and L11.
    - Suggested action: modify (keep the 2026-05-21 row, drop the 2026-05-29 one; pairs with the finding above).
 5. **MEMORY.md** [index_only_content] — the Rollbacks line under Feedback holds the fact itself and links no detail file, so this content exists nowhere else in the store.
-   - Evidence: MEMORY.md L13; anchored `grep '^- ' MEMORY.md | grep -v '](' ` returns 1 of 11 index lines.
+   - Evidence: MEMORY.md L13; anchored `grep -E '^[-*] ' MEMORY.md | grep -v '](' | grep -vE '^[-*] *[[][[][^]]*[]][]] *$'` returns 1 of 11 index lines.
    - Suggested action: flag (write the detail file, shorten the line to a pointer).
 6. **reference_key_rotation.md** [unverifiable_reference] — points at `scripts/rotate-keys.sh`, which is not in the repo.
    - Evidence: `test -e` and `git ls-files scripts/` both come up empty (checked 2026-06-02).

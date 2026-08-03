@@ -22,7 +22,7 @@ The index (`MEMORY.md`) and the detail files must agree. Four sub-checks:
 
 - **Index line, no file.** A `[Title](slug.md)` line whose file does not exist. Includes archived memories whose index line was never dropped (cross-check `ARCHIVE.md`). Action: `modify` targeting `MEMORY.md`, dropping the line. Confidence: high (mechanical).
 - **File, no index line.** A live detail file with no line in the index. It is invisible at recall time, which defeats the point of capturing it. Action: `modify` targeting `MEMORY.md`, adding a line under the right type heading. Confidence: high. **Files under `archive/` are exempt** — losing the index line is the last step of retiring one.
-- **Half-finished archive.** A file listed in `ARCHIVE.md` that is still sitting in the memory root, with no `archived:` stamp in its frontmatter. It fails in the wrong direction: nothing was lost, so no backup flags it, and every session keeps reading a retired memory as current. The tell is a curator proposing to archive something that was retired weeks ago, with no way to see the earlier row. Action: `modify` naming the file, with the fix being stamp + move to `archive/` + repoint inbound links. Confidence: high (mechanical — the row and the missing stamp are both greppable).
+- **Half-finished archive.** A file listed in `ARCHIVE.md` that is still sitting in the memory root, with no `archived:` stamp in its frontmatter. It fails in the wrong direction: nothing was lost, so no backup flags it, and every session keeps reading a retired memory as current. The tell is a curator proposing to archive something that was retired weeks ago, with no way to see the earlier row. Action: `archive` — **not** `modify`. A `modify` is only an excerpt swap, so it would write the `archived:` stamp without the move, leaving the file live AND hiding it from this very sub-check, which keys off the stamp being absent. `archive` resumes: `commands/dream-apply.md` step 1 treats a target still in the memory root as a crashed run, skips the row append, and finishes stamp + move + repoint + index-drop. Stamp with the row's date, not today. Confidence: high (mechanical — the row and the missing stamp are both greppable).
 - **Hook does not match the file.** The index hook and the file's frontmatter `description` say materially different things (not paraphrase; different facts). The detail file is the authority; the hook follows it. Action: `modify` targeting `MEMORY.md`, rewriting the hook from the description. Confidence: medium. If the file looks wrong and the hook looks right, `flag` instead; that is a content question, not an index question.
 
 Mechanics for index proposals: `target` is `MEMORY.md`, `current_excerpt` is the exact existing line (or the placeholder comment / section heading when adding a line), `proposed_excerpt` is the replacement. That keeps the proposal applyable by `/dream-apply`'s excerpt-swap.
@@ -65,10 +65,10 @@ The four types drive curation (`docs/memory-format.md`): `user` is who the user 
 An index line that carries the fact itself instead of pointing at a detail file — a `- ` line with no `](…)` link in it. Detection:
 
 ```sh
-grep -E '^[-*] ' MEMORY.md | grep -v '](' | grep -v '\[\['
+grep -E '^[-*] ' MEMORY.md | grep -v '](' | grep -vE '^[-*] *\[\[[^]]*\]\] *$'
 ```
 
-Two exclusions matter. `[-*]` catches both bullet styles. And a line whose only pointer is a `[[slug]]` wikilink is **not** a finding here — check 2 says an unresolved `[[slug]]` "marks a memory worth writing later, not an error," so flagging it high-confidence here would have this check contradict that one.
+Two exclusions matter. `[-*]` catches both bullet styles. And a bullet whose **entire content** is a `[[slug]]` wikilink is not a finding here — check 2 owns those, calling an unresolved link "not an error" because "it marks a memory worth writing later." Match the whole line, not merely the presence of `[[`: a bullet that states a fact *and* links a related memory as an aside is still index-only content, and excluding it on the `[[` alone would silence a real finding.
 
 **Anchor on `^- `.** Without the anchor this check is unusable, because `grep -cv '](' MEMORY.md` counts headings, the blockquote, and every blank line. Measured, not asserted:
 
@@ -88,12 +88,12 @@ Action: `flag`. The fix is to write the detail file and shorten the line to a po
 The same memory tombstoned more than once in `ARCHIVE.md`. Detection is mechanical: extract the link target from every row, then count duplicates.
 
 ```sh
-grep -o '](archive/[^)]*)' ARCHIVE.md | sort | uniq -d
+grep '^| 20' ARCHIVE.md | cut -d'|' -f3 | grep -o '](archive/[^)]*)' | sort | uniq -d
 ```
 
-**Scope to `](archive/`, not every link.** The `reason` column is free prose and may cite a memory: two rows retiring two *different* files, both citing the same contract doc in their reasons, make an unscoped `grep -o ']([^)]*)'` report a duplicate that does not exist. That matters more here than elsewhere, because this check's action is a high-confidence `modify` that DELETES a row — a false positive destroys a legitimate tombstone.
+**Scope to the memory column, not the whole file.** The `reason` column is free prose and routinely cites another memory — and most naturally an *archived* one ("superseded by …"), so narrowing the pattern to `](archive/` is not enough either: two rows retiring two *different* files whose reasons both link the same retired doc still read as a duplicate. Cut to field 3, the memory link, and the prose cannot reach it. That matters more here than elsewhere, because this check's action is a high-confidence `modify` that DELETES a row — a false positive destroys a legitimate tombstone.
 
-A duplicate row is **never a new finding**. It means an earlier archive stopped after writing the row: the `archived:` stamp and the move to `archive/` never happened, so the refuse-if-already-archived guard in `docs/curation.md` — which needs the file to be *at* `archive/{slug}` — found nothing and let a later pass retire the same memory a second time. The duplicate row is the only surviving trace of that, which is what makes it worth a check: the half-finished archive it points back to is otherwise silent.
+A duplicate row is **never a new finding**. It means an earlier archive stopped after writing the row: the `archived:` stamp and the move to `archive/` never happened. The guard that should have caught the second attempt lives in `commands/dream-apply.md` step 1, and its problem was the opposite of missing the row — it *saw* the row and read it as "already retired, stop," while its resume path required an `archived:` stamp the crashed run had never written. So a half-finished archive could be neither completed nor re-attempted cleanly, and a later pass that bypassed the guard appended a second row. Step 1 now decides on where the file is, not on what `ARCHIVE.md` says. The duplicate row is the only surviving trace of that, which is what makes it worth a check: the half-finished archive it points back to is otherwise silent.
 
 Action: `modify` `ARCHIVE.md`, keeping the **earliest** row and dropping the later ones. The earliest is the true retirement date; the later rows are re-runs, and their `reason` text is a second guess at a decision already recorded. Confidence: high. Then file the underlying half-finished archive under check 1 so the stamp and the move actually complete — dropping the extra row alone leaves the file live in the memory root.
 
@@ -101,17 +101,24 @@ Action: `modify` `ARCHIVE.md`, keeping the **earliest** row and dropping the lat
 
 A `project` memory that has turned into a changelog: a running list of what shipped when, rather than one fact. Found twice in a ~330-file store, about 9KB between them.
 
-The shape is greppable from the memory dir alone — several version strings, `Session N` or `shipped vX` headings, PR numbers carrying status:
+**This one is judgment, not grep** — the same footing as checks 4 and 5. "Is this file a changelog?" is a question about what the text *is*, and no pattern decides it. Read every `project_*.md`; a grep only tells you where to start reading.
+
+A starting hint, deliberately labelled non-exhaustive:
 
 ```sh
 for f in project_*.md; do
-  [ -e "$f" ] || break                      # fresh store has none; do not error
-  n=$(grep -cE '^[-*#[:space:]]*(\*\*)?(Session [0-9]+|v[0-9]+\.[0-9]+)' "$f")
-  [ "$n" -ge 3 ] && echo "$f ($n markers)"
+  [ -e "$f" ] || break                      # a fresh store has none; do not error
+  n=$(awk '/^```/{fence=!fence; next} !fence' "$f"       | grep -cE '^[-*#[:space:]]*(\*\*)?(Session|Sprint|Release|v?[0-9]+\.[0-9]+)')
+  [ "$n" -ge 2 ] && echo "$f (~$n markers — READ IT, do not file on the count)"
 done
 ```
 
-**Count markers; do not match one.** Two things went wrong in the obvious one-liner and both are load-bearing. A top-level `|` in `'^\*\*(…)|shipped v[0-9]'` leaves the second alternative **unanchored**, so it fires on a clean one-fact memory that merely says "We shipped v3.1 last month" — an unanchored grep firing on innocent input is exactly why check 8 was reverted once already. And anchoring branch A to literal `**` in column 1 matches only one authoring style: a real release log written with `## v1.0`, `### Session 3`, and `- v1.3` bullets was **missed entirely**. Allowing heading and bullet markers before the token fixes the misses; requiring **three or more** is what separates a log from a passing mention, which no single-match grep can do.
+**Do not treat a count as a finding.** Every threshold here is arbitrary and both error directions are real, so the hint is tuned loose and the reading decides:
+
+- **It over-fires.** A memory whose one fact *is* about versioning ("one pin per quarter", three bullets naming v1.4/v1.5/v1.6) trips it, and so did a fenced code sample containing a changelog before the `awk` fence-strip above. Neither is a log.
+- **It under-fires.** Real logs use styles no list anticipates: `## Sprint 4`, `## Release 2026-03`, `## 1.2.0` with no `v`, bare `- #101 merged` PR lists. A genuine two-release log has only two markers. Earlier drafts of this check missed all of these while confidently matching the one style the fixture happened to use — a fixture written alongside its own grep proves nothing.
+
+What actually identifies a log, on reading: **repeated dated or versioned entries, each about a different event**, with no single durable claim the file is *for*. One fact plus version numbers in it is not a log.
 
 Two tiers, and keeping them apart is the whole point:
 
