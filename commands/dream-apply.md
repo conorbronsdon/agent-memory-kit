@@ -43,7 +43,9 @@ c. On **Accept**:
    - `archive` → all five steps. An archive that stops early leaves the file reading as live:
      1. **Refuse only if it is actually retired** — and the test for that is **where the file is**, not what `ARCHIVE.md` says:
         - `test -f memory/archive/{target}` hits → genuinely retired. Stop.
-        - The target is **still in the memory root** → it is *not* retired, whatever `ARCHIVE.md` claims. This is a **crashed earlier run: resume, do not stop and do not start over.** Skip step 2, the row is already there (if there are several, keep the earliest — that date is the true retirement date, and use it for the stamp in step 3 rather than today). Do step 3 only if `grep -c '^archived:' memory/{target}` is 0. Then 4 and 5.
+        - Otherwise the target is **still in the memory root**, so it is *not* retired, whatever `ARCHIVE.md` claims — a file every session still reads as live. Which of two cases decides what to do, and the row is what tells them apart:
+          - **No row** in `ARCHIVE.md` → an ordinary archive. Do all five steps.
+          - **A row already exists** → a **crashed earlier run: resume, do not stop and do not start over.** Skip step 2 — appending again is what produces the duplicate rows lint check 9 reports. If there are several rows, keep the earliest and drop the rest; that date is the true retirement date, so use it for the stamp instead of today. Do step 3 only if `grep -c '^archived:' memory/{target}` is 0. Then 4 and 5.
 
         Do **not** grep `ARCHIVE.md` for the bare filename: merge tombstones name the surviving file and split tombstones name the children, and those are live.
 
