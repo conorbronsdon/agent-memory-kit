@@ -41,26 +41,8 @@ b. Ask via `AskUserQuestion`: **Accept / Reject / Edit then accept / Skip rest**
 c. On **Accept**:
    - `modify` → Edit `memory/{target}`, replacing `current_excerpt` with `proposed_excerpt`.
    - `archive` → all five steps. An archive that stops early leaves the file reading as live:
-     1. **Decide from the filesystem first, then the row.** Run all three, before anything else:
-        ```sh
-        test -f "$MEMORY_DIR/archive/{target}"                    # A: already under archive/
-        test -f "$MEMORY_DIR/{target}"                            # B: still live in the root
-        grep -cF "](archive/{target})" "$MEMORY_DIR/ARCHIVE.md"   # C: tombstone rows
-        ```
-        | A | B | C | Do |
-        |---|---|---|---|
-        | hit | — | any | Genuinely retired. **Stop.** |
-        | hit | hit | any | Two copies exist. **Stop and surface** — the root copy is live and an archived one already exists, so which survives is a human's call. |
-        | — | — | any | Target is gone (deleted or renamed between dream and apply). **Stop and surface.** |
-        | — | hit | 0 | Ordinary archive. All five steps. |
-        | — | hit | >0 | Crashed earlier run. **Resume:** skip step 2 — appending again is what produces the duplicate rows lint check 9 reports. Keep the earliest row and drop the rest; that date is the true retirement date, so stamp with it instead of today. Do step 3 only if `grep -c '^archived:' "$MEMORY_DIR/{target}"` is 0. Then 4 and 5. |
-
-        **B is not optional.** Without it, a target that vanished between dream and apply takes the ordinary branch, step 2 appends a tombstone row, and steps 3-4 then fail against a file that is not there — leaving a row with nothing behind it, which is exactly the row-only half-finished state this section exists to prevent. The Safety section anticipates the same dream-to-apply drift for `modify`; `archive` needs its own guard.
-
-        Match rows with `grep -F "](archive/{target})"` and **never** the bare filename: merge tombstones name the surviving file and split tombstones name the children, and those are live.
-
-        > Why location decides and not the stamp: a row-only hit used to mean "already retired, stop," and the resume clause required the file to already carry `^archived:`. That covered a crash between steps 3 and 4 but **not** one between 2 and 3 — precisely the half-finished archive lint check 1 is defined to detect ("listed in `ARCHIVE.md`, still in the memory root, **with no `archived:` stamp**"). So the kit described a defect its own apply step then refused to repair.
-
+     1. **Refuse if already archived** — `test -f memory/archive/{target}`, and `grep -F "](archive/{target})" memory/ARCHIVE.md`. A hit on either means it is already retired; stop.
+        Do **not** grep `ARCHIVE.md` for the bare filename: merge tombstones name the surviving file and split tombstones name the children, and those are live. Separately, a file still in the root that already carries an `^archived:` stamp is a crashed earlier run — finish steps 4-5, don't start over.
      2. Append `| {today} | [{target}](archive/{target}) | {one-line reason} |` to `memory/ARCHIVE.md`.
      3. **Stamp it**: add `archived: {today}` as the last line of the file's frontmatter. This is what stops a later session reading it as live.
      4. **Move it.** `git mv` does not create the destination, and the memory dir is its own git repo — so both, from inside it:
