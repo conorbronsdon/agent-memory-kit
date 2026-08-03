@@ -14,7 +14,7 @@ Unlike rot, lint does not need `state/` or `sessions/`. It runs standalone again
 
 ## The checks
 
-Run all seven, in order. Every finding needs: action, evidence (file plus line), confidence.
+Run all ten, in order. Every finding needs: action, evidence (file plus line), confidence.
 
 ### 1. Index drift
 
@@ -22,7 +22,7 @@ The index (`MEMORY.md`) and the detail files must agree. Four sub-checks:
 
 - **Index line, no file.** A `[Title](slug.md)` line whose file does not exist. Includes archived memories whose index line was never dropped (cross-check `ARCHIVE.md`). Action: `modify` targeting `MEMORY.md`, dropping the line. Confidence: high (mechanical).
 - **File, no index line.** A live detail file with no line in the index. It is invisible at recall time, which defeats the point of capturing it. Action: `modify` targeting `MEMORY.md`, adding a line under the right type heading. Confidence: high. **Files under `archive/` are exempt** — losing the index line is the last step of retiring one.
-- **Half-finished archive.** A file listed in `ARCHIVE.md` that is still sitting in the memory root, with no `archived:` stamp in its frontmatter. It fails in the wrong direction: nothing was lost, so no backup flags it, and every session keeps reading a retired memory as current. The tell is a curator proposing to archive something that was retired weeks ago, with no way to see the earlier row. Action: `modify` naming the file, with the fix being stamp + move to `archive/` + repoint inbound links. Confidence: high (mechanical — the row and the missing stamp are both greppable).
+- **Half-finished archive.** A file listed in `ARCHIVE.md` that is still sitting in the memory root, with no `archived:` stamp in its frontmatter. It fails in the wrong direction: nothing was lost, so no backup flags it, and every session keeps reading a retired memory as current. The tell is a curator proposing to archive something that was retired weeks ago, with no way to see the earlier row. Action: `archive` — **not** `modify`. A `modify` is only an excerpt swap, so it would write the `archived:` stamp without the move, leaving the file live AND hiding it from this very sub-check, which keys off the stamp being absent. `archive` resumes: `commands/dream-apply.md` step 1 decides from the filesystem: a target still in the memory root **with a row already in `ARCHIVE.md`** is the crashed-run case, so it skips the row append and finishes stamp + move + repoint + index-drop. (Root with no row is an ordinary archive and does append its row — the two are not the same case.) Stamp with the row's date, not today. Confidence: high (mechanical — the row and the missing stamp are both greppable).
 - **Hook does not match the file.** The index hook and the file's frontmatter `description` say materially different things (not paraphrase; different facts). The detail file is the authority; the hook follows it. Action: `modify` targeting `MEMORY.md`, rewriting the hook from the description. Confidence: medium. If the file looks wrong and the hook looks right, `flag` instead; that is a content question, not an index question.
 
 Mechanics for index proposals: `target` is `MEMORY.md`, `current_excerpt` is the exact existing line (or the placeholder comment / section heading when adding a line), `proposed_excerpt` is the replacement. That keeps the proposal applyable by `/dream-apply`'s excerpt-swap.
@@ -60,13 +60,80 @@ Memories that name local paths, scripts, or files: verify each with `test -e` / 
 
 The four types drive curation (`docs/memory-format.md`): `user` is who the user is, `feedback` is how the agent should work, `project` is in-flight work, `reference` is pointers to external resources. A misfiled memory gets the wrong curation treatment; rot audits `project`/`reference` hardest and mostly skips `feedback`/`user`, so a project status filed as `feedback` escapes every rot pass. Common misfiles: a working rule filed as `reference`; in-flight status filed as `user` or `feedback`; an external pointer filed as `project`. Action: `modify` the frontmatter `type` line, confidence medium. Note in the reasoning the manual follow-ups the apply step cannot do: the filename keeps its old prefix until the human renames it, and the index line should move to the right section.
 
+### 8. Index-only content
+
+An index line that carries the fact itself instead of pointing at a detail file — a `- ` line with no `](…)` link in it. Detection:
+
+```sh
+grep -E '^ *[-*] ' MEMORY.md | grep -vE '\]\([^)]*\.md\)' | grep -vE '^ *[-*] *\[\[[^]]*\]\] *$'
+```
+
+Three details matter. `[-*]` catches both bullet styles and the leading `^ *` catches indented sub-bullets, which are index content too. The link test is `](….md)`, not a bare `](`: a bullet whose only link is a URL has no **detail file** behind it, so every word of the rationale below applies to it — there is nothing to stamp, nothing to move, and nothing for a tombstone to point at. And a bullet whose **entire content** is a `[[slug]]` wikilink is not a finding here — check 2 owns those, calling an unresolved link "not an error" because "it marks a memory worth writing later." Match the whole line, not merely the presence of `[[`: a bullet that states a fact *and* links a related memory as an aside is still index-only content, and excluding it on the `[[` alone would silence a real finding.
+
+**Anchor on `^- `.** Without the anchor this check is unusable, because `grep -cv '](' MEMORY.md` counts headings, the blockquote, and every blank line. Measured, not asserted:
+
+| | unanchored | anchored |
+|---|---|---|
+| `context-starter/memory/` (pristine, no defect) | **11** | **0** |
+| `examples/lint-pass/memory/` (one seeded defect) | **14** | **1** |
+
+The pristine row is the point: unanchored, this check reports 11 findings against a scaffold that contains nothing. The fixture row is the check working — 1 is the seeded defect, and it is the only thing anchored counting finds. Anchor first, then count.
+
+Why this is worth a finding, and none of it depends on which agent or runner loads the store: the index is the one file every session reads, and `docs/memory-format.md` states the rule outright — "The `MEMORY.md` index holds **one line per memory**, never memory content" (line 18) — against a hard line budget of ~100 lines (line 16). Every other memory survives that trim, because all three things that make a retirement recoverable key off a *file* — `ARCHIVE.md`'s tombstone row links one, the `archived:` stamp is written into one, `archive/` holds one. A fact that exists only as an index line has nothing to stamp and nothing to move, so the trim is a plain delete with no tombstone behind it. It is also invisible to the rest of curation: rot iterates `project_*.md` and `reference_*.md` **files** (`prompts/rot.md:18`), and an index line is not a file, so nothing ever re-checks it.
+
+Action: `flag`. The fix is to write the detail file and shorten the line to a pointer, and where that split falls is the human's call. Confidence: high — the missing link is mechanical, even though the remedy is not.
+
+### 9. Duplicate archive rows
+
+The same memory tombstoned more than once in `ARCHIVE.md`. Detection is mechanical: extract the link target from every row, then count duplicates.
+
+```sh
+grep '^| 20' ARCHIVE.md | cut -d'|' -f3 | grep -o '](archive/[^)]*)' | sort | uniq -d
+```
+
+**Scope to the memory column, not the whole file.** The `reason` column is free prose and routinely cites another memory — and most naturally an *archived* one ("superseded by …"), so narrowing the pattern to `](archive/` is not enough either: two rows retiring two *different* files whose reasons both link the same retired doc still read as a duplicate. Cut to field 3, the memory link, and the prose cannot reach it. One known blind spot, and it is the safe direction: a memory whose *title* contains an escaped `\|` splits across fields, so its row drops out and a genuine duplicate can be missed. A miss costs a re-run; a false positive would delete a legitimate tombstone. That matters more here than elsewhere, because this check's action is a high-confidence `modify` that DELETES a row — a false positive destroys a legitimate tombstone.
+
+A duplicate row is **never a new finding**. It means an earlier archive stopped after writing the row: the `archived:` stamp and the move to `archive/` never happened. The guard that should have caught the second attempt lives in `commands/dream-apply.md` step 1, and its problem was the opposite of missing the row — it *saw* the row and read it as "already retired, stop," while its resume path required an `archived:` stamp the crashed run had never written. So a half-finished archive could be neither completed nor re-attempted cleanly, and a later pass that bypassed the guard appended a second row. Step 1 now refuses only on where the file is; the row still matters, but as the thing that tells an ordinary archive from a resume rather than as grounds to stop (`commands/dream-apply.md`, and #23). The duplicate row is the only surviving trace of that, which is what makes it worth a check: the half-finished archive it points back to is otherwise silent.
+
+Action: `modify` `ARCHIVE.md`, keeping the **earliest** row and dropping the later ones. The earliest is the true retirement date; the later rows are re-runs, and their `reason` text is a second guess at a decision already recorded. Confidence: high. Then file the underlying half-finished archive under check 1 so the stamp and the move actually complete — dropping the extra row alone leaves the file live in the memory root.
+
+### 10. Build-log bloat
+
+A `project` memory that has turned into a changelog: a running list of what shipped when, rather than one fact. Found twice in a ~330-file store, about 9KB between them.
+
+**This one is judgment, not grep** — the same footing as checks 4 and 5. "Is this file a changelog?" is a question about what the text *is*, and no pattern decides it. Read every `project_*.md`; a grep only tells you where to start reading.
+
+A starting hint, deliberately labelled non-exhaustive:
+
+```sh
+for f in project_*.md; do
+  [ -e "$f" ] || break                      # a fresh store has none; do not error
+  n=$(awk '/^```/{fence=!fence; next} !fence' "$f"       | grep -cE '^[-*#[:space:]]*(\*\*)?(Session|Sprint|Release|v?[0-9]+\.[0-9]+)')
+  [ "$n" -ge 2 ] && echo "$f (~$n markers — READ IT, do not file on the count)"
+done
+```
+
+**Do not treat a count as a finding.** Every threshold here is arbitrary and both error directions are real, so the hint is tuned loose and the reading decides:
+
+- **It over-fires.** A memory whose one fact *is* about versioning ("one pin per quarter", three bullets naming v1.4/v1.5/v1.6) trips it, and so did a fenced code sample containing a changelog before the `awk` fence-strip above. Neither is a log.
+- **It under-fires.** Real logs use styles no list anticipates: `## Sprint 4`, `## Release 2026-03`, `## 1.2.0` with no `v`, bare `- #101 merged` PR lists. A genuine two-release log has only two markers. Earlier drafts of this check missed all of these while confidently matching the one style the fixture happened to use — a fixture written alongside its own grep proves nothing.
+
+What actually identifies a log, on reading: **repeated dated or versioned entries, each about a different event**, with no single durable claim the file is *for*. One fact plus version numbers in it is not a log.
+
+Two tiers, and keeping them apart is the whole point:
+
+- **Standalone (always available).** A log is many facts in one file, which `docs/memory-format.md` rules out ("One fact per file... if you're tempted to use 'and,' it's two memories"), and it drifts against *itself*: one block says v2.3 shipped, a later line still calls v2.2 current. Both cannot be true, and neither needs the repo to see. Say which paragraphs are log and which are the durable rule worth keeping.
+- **Duplication (only when a work repo is at hand).** The stronger finding — "the repo already records this, and `docs/memory-format.md` says don't save what the repo already records" — is a claim *about the repo*, so it needs one. Cite the path: `git ls-files CHANGELOG.md docs/releases`. Lint runs standalone against any memory directory, so with no repo in reach, **do not assert the duplication**; report the shape and say the duplication was not checked. This is the same hedge check 3's shipped-work heuristic carries, for the same reason.
+
+Action: `flag` naming log paragraphs versus durable ones. Never `modify` — deciding what survives a rewrite is a content judgment, and a wrong cut deletes the one durable rule buried in the log. Confidence: medium; the shape is mechanical, the split is not.
+
 ## Output
 
 Write `proposals.json` and `REPORT.md` to `{MEMORY_DIR}/.dreams/{ISO-timestamp}/`.
 
 ### `proposals.json`
 
-Same schema as every curator (`docs/curation.md`), plus a `check` field naming which of the seven checks fired, so findings group cleanly:
+Same schema as every curator (`docs/curation.md`), plus a `check` field naming which of the ten checks fired, so findings group cleanly:
 
 ```json
 {
@@ -102,7 +169,7 @@ House format: counts, findings grouped by confidence (highest-confidence wins fi
 # Dream pass: lint — {ISO-timestamp}
 
 **Audited:** N memory files + the index
-**Checks:** index sync, links, dates, duplicates, contradictions, references, types
+**Checks:** index sync, links, dates, duplicates, contradictions, references, types, index-only content, duplicate archive rows, build-log bloat
 
 ## Findings
 

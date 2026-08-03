@@ -1,7 +1,11 @@
 {
   "curator": "lint",
   "ran_at": "2026-06-02T10:14:09Z",
-  "inputs_summary": { "memory_files_audited": 8, "index_entries": 8, "local_paths_verified": 1 },
+  "inputs_summary": {
+    "memory_files_audited": 10,
+    "index_entries": 11,
+    "local_paths_verified": 1
+  },
   "proposals": [
     {
       "id": "lint-001",
@@ -10,7 +14,7 @@
       "target": "MEMORY.md",
       "reasoning": "Index line points at reference_build_flags.md, which does not exist in memory/ and has no row in ARCHIVE.md. A dead index line wastes recall budget and erodes trust in the index. Drop it.",
       "evidence": [
-        "MEMORY.md L22: '- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.'",
+        "MEMORY.md L25: '- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.'",
         "checked 2026-06-02: ls memory/reference_build_flags.md: not found; no ARCHIVE.md row mentions it"
       ],
       "current_excerpt": "- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.",
@@ -38,7 +42,7 @@
       "target": "MEMORY.md",
       "reasoning": "The index hook for project_billing_alerts.md says the alerts are being silenced 'for good'; the file's description says they are paused during the cutover window and then re-enabled. Those are different facts, and the index is what loads every session. The detail file is the authority; rewrite the hook from the description.",
       "evidence": [
-        "MEMORY.md L17: '- [Billing alerts cleanup](project_billing_alerts.md): silence the legacy Acme billing alerts for good.'",
+        "MEMORY.md L18: '- [Billing alerts cleanup](project_billing_alerts.md): silence the legacy Acme billing alerts for good.'",
         "project_billing_alerts.md L3: 'description: Pause the legacy Acme billing alerts during the CDN cutover window, then re-enable them.'"
       ],
       "current_excerpt": "- [Billing alerts cleanup](project_billing_alerts.md): silence the legacy Acme billing alerts for good.",
@@ -69,7 +73,7 @@
       "evidence": [
         "project_cdn_migration.md L3: 'description: Migration of static assets onto the new CDN.'",
         "project_cdn_cutover.md L3: 'description: Static assets moving off origin onto the new CDN, status and constraints.'",
-        "MEMORY.md L15-L16: both files indexed as separate Project entries"
+        "MEMORY.md L16-L17: both files indexed as separate Project entries"
       ],
       "current_excerpt": "Static assets are moving onto the new CDN. Same work as the cutover: warm the cache, then flip DNS.",
       "proposed_excerpt": "",
@@ -159,9 +163,74 @@
       "current_excerpt": "Related: [[incident-runbook]] (where the rollback steps will live).",
       "proposed_excerpt": "",
       "confidence": "low"
+    },
+    {
+      "id": "lint-012",
+      "check": "index_only_content",
+      "action": "flag",
+      "target": "MEMORY.md",
+      "reasoning": "The Rollbacks line under Feedback holds the whole fact and links no detail file, so this content lives only in the index. It is the one thing in the store a consolidation pass deletes outright: an ARCHIVE.md row links a file, the archived: stamp is written into a file, archive/ holds a file, and there is no file here. It also has no frontmatter, so it has no type, so no rot pass ever re-checks it. The fix is to write feedback_rollback_pin.md and shorten the line to a pointer; the curator flags rather than modifies because where the fact splits is the human's call.",
+      "evidence": [
+        "MEMORY.md L13: '- Rollbacks: keep the previous image tag pinned in the deploy manifest, so a rollback is a one-line revert instead of a rebuild from the last green commit.'",
+        "checked 2026-06-02: grep -E '^ *[-*] ' MEMORY.md | grep -vE '\\]\\([^)]*\\.md\\)' | grep -vE '^ *[-*] *\\[\\[[^]]*\\]\\] *$' returns 1 of 11 index lines; no memory file covers the rollback pin"
+      ],
+      "current_excerpt": "- Rollbacks: keep the previous image tag pinned in the deploy manifest, so a rollback is a one-line revert instead of a rebuild from the last green commit.",
+      "proposed_excerpt": "- [Rollback pin](feedback_rollback_pin.md): keep the previous image tag pinned in the deploy manifest so a rollback is a revert, not a rebuild.",
+      "confidence": "high"
+    },
+    {
+      "id": "lint-013",
+      "check": "index_drift",
+      "action": "archive",
+      "target": "project_image_pipeline.md",
+      "reasoning": "Tombstoned in ARCHIVE.md on 2026-05-21, but the file never left the memory root and never got its archived: stamp, so every session still reads it as live. Nothing was lost, which is why no backup flags it. This needs the five-step archive action, not a modify: a modify is only an excerpt swap, so stamping without the move would leave the file live AND hide it from this very check, which keys off the stamp being absent. dream-apply step 1 decides from the filesystem — the target is in the memory root and rows already exist, which is the crashed-run case, so it resumes: no new row, keep the earliest row, stamp with that date (2026-05-21) rather than today, then move, repoint, and drop the index line. Accepting this makes lint-014 a no-op, because the resume already drops the later duplicate row; review them together and expect 014 to report nothing left to change.",
+      "evidence": [
+        "ARCHIVE.md L10: '| 2026-05-21 | [Legacy image pipeline](archive/project_image_pipeline.md) | Pipeline retired; the CDN resizes at the edge now. |'",
+        "checked 2026-06-02: test -f archive/project_image_pipeline.md fails; the root copy exists and grep '^archived:' project_image_pipeline.md returns nothing",
+        "MEMORY.md L19: '- [Legacy image pipeline](project_image_pipeline.md): origin-side image resizing, decommissioned at the CDN cutover.'"
+      ],
+      "current_excerpt": "Static image resizing runs in the legacy pipeline on the origin servers. The new\nCDN resizes at the edge, so the pipeline is decommissioned at the cutover.",
+      "proposed_excerpt": "",
+      "confidence": "high"
+    },
+    {
+      "id": "lint-014",
+      "check": "duplicate_archive_row",
+      "action": "modify",
+      "target": "ARCHIVE.md",
+      "reasoning": "project_image_pipeline.md is tombstoned twice. That is never a second retirement: the 2026-05-21 archive stopped after writing the row, so the refuse-if-already-archived guard (which tests for the file at archive/{slug}) found nothing on 2026-05-29 and wrote a second row over the same decision. Keep the earliest row, which carries the true retirement date and the reason recorded at the time, and drop the later one. Dropping the row is not the whole fix; lint-013 completes the archive itself.",
+      "evidence": [
+        "checked 2026-06-02: grep '^| 20' ARCHIVE.md | cut -d'|' -f3 | grep -o '](archive/[^)]*)' | sort | uniq -d returns '](archive/project_image_pipeline.md)' — 1 duplicated target out of 3 rows",
+        "ARCHIVE.md L11: '| 2026-05-29 | [Legacy image pipeline](archive/project_image_pipeline.md) | No longer relevant, image resizing moved to the CDN. |'"
+      ],
+      "current_excerpt": "| 2026-05-29 | [Legacy image pipeline](archive/project_image_pipeline.md) | No longer relevant, image resizing moved to the CDN. |",
+      "proposed_excerpt": "",
+      "confidence": "high"
+    },
+    {
+      "id": "lint-015",
+      "check": "build_log_bloat",
+      "action": "flag",
+      "target": "project_release_log.md",
+      "reasoning": "This project memory is a release log, not a fact: four dated version blocks with PR numbers, against the one-fact-per-file rule in docs/memory-format.md. It already drifts against itself — L14 records v2.3 as shipped and L16 records v2.4 as cut, while L18 still calls v2.2 the current version. Only the last paragraph is durable: the 15-minute signed-URL expiry and the retry-once-on-403 rule. Flagged, not modified: deciding which paragraphs survive is a content judgment, and a wrong cut takes the one durable rule with it. Duplication against a repo changelog was NOT checked — this pass ran standalone with no work repo in reach, so the stronger 'the repo already records this' finding needs a re-run from inside the repo with git ls-files CHANGELOG.md.",
+      "evidence": [
+        "checked 2026-06-02: read all 5 project memories; only project_release_log.md is a log. The fence-stripped marker hint surfaces it at ~4, but the hint is a reading prompt, not the finding.",
+        "project_release_log.md L14: '**v2.3 (2026-05-11):** flag removed, signed URLs on by default. PR #447.' vs L18: '**Current version:** v2.2. Signed URLs are next.'",
+        "docs/memory-format.md, writing rules: 'One fact per file' and 'Don't save what the repo already records'"
+      ],
+      "current_excerpt": "**Current version:** v2.2. Signed URLs are next.",
+      "proposed_excerpt": "",
+      "confidence": "medium"
     }
   ],
   "skipped": [
-    { "target": "user_timezone.md", "reason": "Content is clean; its only issue (missing index line) is filed against MEMORY.md as lint-002." }
+    {
+      "target": "user_timezone.md",
+      "reason": "Content is clean; its only issue (missing index line) is filed against MEMORY.md as lint-002."
+    },
+    {
+      "target": "archive/project_origin_bandwidth_alarm.md",
+      "reason": "A completed retirement: under archive/, stamped archived: 2026-05-04, exactly one ARCHIVE.md row. Files under archive/ are out of scope by design."
+    }
   ]
 }

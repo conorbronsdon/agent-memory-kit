@@ -72,17 +72,22 @@ That is the entire bet of this kit, made concrete: the curator quietly stops the
 
 Rot asks whether memory still matches the world. `/dream lint` asks whether the store matches itself. A memory directory can be completely rot-free and still broken: index lines pointing at deleted files, the same fact captured twice under two names, two rules that cannot both be followed, a "revisit next week" that never became a date.
 
-[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in seven ways (one per lint check), plus the artifact a lint pass produces over it:
+[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in twelve ways — covering every check that can have a defect — plus the artifact a lint pass produces over it:
 
 | Defect | Where | What lint proposes |
 |---|---|---|
 | Index line, no file | `MEMORY.md` points at a deleted `reference_build_flags.md` | drop the dead line (high confidence) |
 | File, no index line | `user_timezone.md` is never recalled | add the index line (high confidence) |
+| Half-finished archive | `project_image_pipeline.md` is tombstoned in `ARCHIVE.md` but still live in the memory root, unstamped | finish it: stamp, move to `archive/`, repoint links, drop the index line (high) |
+| Duplicate archive rows | the same pipeline is tombstoned twice, 2026-05-21 and 2026-05-29 | keep the earliest row, drop the re-run (high) |
 | Hook contradicts the file | index says alerts silenced "for good"; the file says paused, then re-enabled | rewrite the hook from the file (medium) |
 | Duplicate fact | `project_cdn_cutover.md` and `project_cdn_migration.md` are one CDN move in two files | fold the unique detail into one, archive the other (paired proposals) |
 | Stale dates | a DNS flip "scheduled for 2026-05-20," long past; a "revisit next week" never made absolute | convert what has an anchor; flag the rest for a rot pass |
 | Contradiction | "never push straight to prod" vs "for sev-1, push straight to prod" | flag with both files quoted; never auto-resolved |
+| Dead local path | `reference_key_rotation.md` points at a `scripts/rotate-keys.sh` the repo does not have | flag with the `test -e` / `git ls-files` result quoted (high) |
 | Misfiled type | a how-to-work rule typed `reference` | retype to `feedback` (medium) |
+| Index-only content | a Feedback line holds the rollback rule itself and links no file | flag: write the detail file, shorten the line to a pointer (high) |
+| Build-log bloat | `project_release_log.md` is four release blocks that contradict each other, wrapped around one durable rule | flag the log paragraphs; the "repo already keeps this" half needs a work repo (medium) |
 
 The unresolved `[[incident-runbook]]` link is listed as info only: per [`docs/memory-format.md`](../docs/memory-format.md), an unresolved link is a placeholder for a memory worth writing later, not an error.
 
