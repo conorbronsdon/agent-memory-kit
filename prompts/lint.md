@@ -14,7 +14,7 @@ Unlike rot, lint does not need `state/` or `sessions/`. It runs standalone again
 
 ## The checks
 
-Run all seven, in order. Every finding needs: action, evidence (file plus line), confidence.
+Run all eight, in order. Every finding needs: action, evidence (file plus line), confidence.
 
 ### 1. Index drift
 
@@ -60,13 +60,27 @@ Memories that name local paths, scripts, or files: verify each with `test -e` / 
 
 The four types drive curation (`docs/memory-format.md`): `user` is who the user is, `feedback` is how the agent should work, `project` is in-flight work, `reference` is pointers to external resources. A misfiled memory gets the wrong curation treatment; rot audits `project`/`reference` hardest and mostly skips `feedback`/`user`, so a project status filed as `feedback` escapes every rot pass. Common misfiles: a working rule filed as `reference`; in-flight status filed as `user` or `feedback`; an external pointer filed as `project`. Action: `modify` the frontmatter `type` line, confidence medium. Note in the reasoning the manual follow-ups the apply step cannot do: the filename keeps its old prefix until the human renames it, and the index line should move to the right section.
 
+### 8. Index-only content
+
+An index line that carries the fact itself instead of pointing at a detail file — a `- ` line with no `](…)` link in it. Detection:
+
+```sh
+grep '^- ' MEMORY.md | grep -v ']('
+```
+
+**Anchor on `^- `.** Without the anchor this check is unusable: `grep -cv '](' MEMORY.md` counts headings, the blockquote, and every blank line, so it returns 11 against the *empty* starter index in `context-starter/memory/` and 13 against the lint fixture. Anchored, both return 0. Anchor first, then count.
+
+Why this is worth a finding, and none of it depends on which agent or runner loads the store: the index is the one file every session reads and the one file under a budget (`docs/memory-format.md`: cap ~100 lines, "consolidate or archive when it fills"). Every other memory survives that trim, because all three things that make a retirement recoverable key off a *file* — `ARCHIVE.md`'s tombstone row links one, the `archived:` stamp is written into one, `archive/` holds one. A fact that exists only as an index line has nothing to stamp and nothing to move, so the trim is a plain delete with no tombstone behind it. It is also invisible to the rest of curation: no frontmatter means no `type`, and rot's audit is type-driven, so nothing ever re-checks it.
+
+Action: `flag`. The fix is to write the detail file and shorten the line to a pointer, and where that split falls is the human's call. Confidence: high — the missing link is mechanical, even though the remedy is not.
+
 ## Output
 
 Write `proposals.json` and `REPORT.md` to `{MEMORY_DIR}/.dreams/{ISO-timestamp}/`.
 
 ### `proposals.json`
 
-Same schema as every curator (`docs/curation.md`), plus a `check` field naming which of the seven checks fired, so findings group cleanly:
+Same schema as every curator (`docs/curation.md`), plus a `check` field naming which of the eight checks fired, so findings group cleanly:
 
 ```json
 {
@@ -102,7 +116,7 @@ House format: counts, findings grouped by confidence (highest-confidence wins fi
 # Dream pass: lint — {ISO-timestamp}
 
 **Audited:** N memory files + the index
-**Checks:** index sync, links, dates, duplicates, contradictions, references, types
+**Checks:** index sync, links, dates, duplicates, contradictions, references, types, index-only content
 
 ## Findings
 

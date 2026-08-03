@@ -1,7 +1,7 @@
 {
   "curator": "lint",
   "ran_at": "2026-06-02T10:14:09Z",
-  "inputs_summary": { "memory_files_audited": 8, "index_entries": 8, "local_paths_verified": 1 },
+  "inputs_summary": { "memory_files_audited": 8, "index_entries": 9, "local_paths_verified": 1 },
   "proposals": [
     {
       "id": "lint-001",
@@ -10,7 +10,7 @@
       "target": "MEMORY.md",
       "reasoning": "Index line points at reference_build_flags.md, which does not exist in memory/ and has no row in ARCHIVE.md. A dead index line wastes recall budget and erodes trust in the index. Drop it.",
       "evidence": [
-        "MEMORY.md L22: '- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.'",
+        "MEMORY.md L23: '- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.'",
         "checked 2026-06-02: ls memory/reference_build_flags.md: not found; no ARCHIVE.md row mentions it"
       ],
       "current_excerpt": "- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.",
@@ -38,7 +38,7 @@
       "target": "MEMORY.md",
       "reasoning": "The index hook for project_billing_alerts.md says the alerts are being silenced 'for good'; the file's description says they are paused during the cutover window and then re-enabled. Those are different facts, and the index is what loads every session. The detail file is the authority; rewrite the hook from the description.",
       "evidence": [
-        "MEMORY.md L17: '- [Billing alerts cleanup](project_billing_alerts.md): silence the legacy Acme billing alerts for good.'",
+        "MEMORY.md L18: '- [Billing alerts cleanup](project_billing_alerts.md): silence the legacy Acme billing alerts for good.'",
         "project_billing_alerts.md L3: 'description: Pause the legacy Acme billing alerts during the CDN cutover window, then re-enable them.'"
       ],
       "current_excerpt": "- [Billing alerts cleanup](project_billing_alerts.md): silence the legacy Acme billing alerts for good.",
@@ -69,7 +69,7 @@
       "evidence": [
         "project_cdn_migration.md L3: 'description: Migration of static assets onto the new CDN.'",
         "project_cdn_cutover.md L3: 'description: Static assets moving off origin onto the new CDN, status and constraints.'",
-        "MEMORY.md L15-L16: both files indexed as separate Project entries"
+        "MEMORY.md L16-L17: both files indexed as separate Project entries"
       ],
       "current_excerpt": "Static assets are moving onto the new CDN. Same work as the cutover: warm the cache, then flip DNS.",
       "proposed_excerpt": "",
@@ -159,6 +159,20 @@
       "current_excerpt": "Related: [[incident-runbook]] (where the rollback steps will live).",
       "proposed_excerpt": "",
       "confidence": "low"
+    },
+    {
+      "id": "lint-012",
+      "check": "index_only_content",
+      "action": "flag",
+      "target": "MEMORY.md",
+      "reasoning": "The Rollbacks line under Feedback holds the whole fact and links no detail file, so this content lives only in the index. It is the one thing in the store a consolidation pass deletes outright: an ARCHIVE.md row links a file, the archived: stamp is written into a file, archive/ holds a file, and there is no file here. It also has no frontmatter, so it has no type, so no rot pass ever re-checks it. The fix is to write feedback_rollback_pin.md and shorten the line to a pointer; the curator flags rather than modifies because where the fact splits is the human's call.",
+      "evidence": [
+        "MEMORY.md L13: '- Rollbacks: keep the previous image tag pinned in the deploy manifest, so a rollback is a one-line revert instead of a rebuild from the last green commit.'",
+        "checked 2026-06-02: grep '^- ' MEMORY.md | grep -v '](' returns 1 of 9 index lines; no memory file covers the rollback pin"
+      ],
+      "current_excerpt": "- Rollbacks: keep the previous image tag pinned in the deploy manifest, so a rollback is a one-line revert instead of a rebuild from the last green commit.",
+      "proposed_excerpt": "- [Rollback pin](feedback_rollback_pin.md): keep the previous image tag pinned in the deploy manifest so a rollback is a revert, not a rebuild.",
+      "confidence": "high"
     }
   ],
   "skipped": [
