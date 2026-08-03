@@ -72,7 +72,7 @@ That is the entire bet of this kit, made concrete: the curator quietly stops the
 
 Rot asks whether memory still matches the world. `/dream lint` asks whether the store matches itself. A memory directory can be completely rot-free and still broken: index lines pointing at deleted files, the same fact captured twice under two names, two rules that cannot both be followed, a "revisit next week" that never became a date.
 
-[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in eleven ways — at least one per lint check — plus the artifact a lint pass produces over it:
+[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in twelve ways — at least one per lint check — plus the artifact a lint pass produces over it:
 
 | Defect | Where | What lint proposes |
 |---|---|---|
@@ -87,6 +87,7 @@ Rot asks whether memory still matches the world. `/dream lint` asks whether the 
 | Dead local path | `reference_key_rotation.md` points at a `scripts/rotate-keys.sh` the repo does not have | flag with the `test -e` / `git ls-files` result quoted (high) |
 | Misfiled type | a how-to-work rule typed `reference` | retype to `feedback` (medium) |
 | Index-only content | a Feedback line holds the rollback rule itself and links no file | flag: write the detail file, shorten the line to a pointer (high) |
+| Build-log bloat | `project_release_log.md` is four release blocks that contradict each other, wrapped around one durable rule | flag the log paragraphs; the "repo already keeps this" half needs a work repo (medium) |
 
 The unresolved `[[incident-runbook]]` link is listed as info only: per [`docs/memory-format.md`](../docs/memory-format.md), an unresolved link is a placeholder for a memory worth writing later, not an error.
 

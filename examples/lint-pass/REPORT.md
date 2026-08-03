@@ -1,13 +1,13 @@
 # Dream pass: lint — 2026-06-02T10:14:09Z
 
-**Audited:** 9 memory files + the index, plus ARCHIVE.md
-**Checks:** index sync, links, dates, duplicates, contradictions, references, types, index-only content, duplicate archive rows
+**Audited:** 10 memory files + the index, plus ARCHIVE.md
+**Checks:** index sync, links, dates, duplicates, contradictions, references, types, index-only content, duplicate archive rows, build-log bloat
 
 ## Findings
 
 ### High confidence (6)
 1. **MEMORY.md** [index_drift] — index line points at `reference_build_flags.md`, which does not exist and was never archived.
-   - Evidence: MEMORY.md L24; `ls` finds no such file, ARCHIVE.md has no row for it.
+   - Evidence: MEMORY.md L25; `ls` finds no such file, ARCHIVE.md has no row for it.
    - Suggested action: modify (drop the dead line).
 2. **MEMORY.md** [index_drift] — `user_timezone.md` exists but has no index line, so it is never recalled.
    - Evidence: file present in memory/; `grep user_timezone MEMORY.md` finds nothing.
@@ -19,13 +19,13 @@
    - Evidence: `grep -o ']([^)]*)' ARCHIVE.md | sort | uniq -d` returns `](archive/project_image_pipeline.md)`; rows at L10 and L11.
    - Suggested action: modify (keep the 2026-05-21 row, drop the 2026-05-29 one; pairs with the finding above).
 5. **MEMORY.md** [index_only_content] — the Rollbacks line under Feedback holds the fact itself and links no detail file, so this content exists nowhere else in the store.
-   - Evidence: MEMORY.md L13; anchored `grep '^- ' MEMORY.md | grep -v '](' ` returns 1 of 10 index lines.
+   - Evidence: MEMORY.md L13; anchored `grep '^- ' MEMORY.md | grep -v '](' ` returns 1 of 11 index lines.
    - Suggested action: flag (write the detail file, shorten the line to a pointer).
 6. **reference_key_rotation.md** [unverifiable_reference] — points at `scripts/rotate-keys.sh`, which is not in the repo.
    - Evidence: `test -e` and `git ls-files scripts/` both come up empty (checked 2026-06-02).
    - Suggested action: flag (the human knows where the rotation procedure went).
 
-### Medium confidence (6)
+### Medium confidence (7)
 1. **MEMORY.md** [index_drift] — the hook for `project_billing_alerts.md` says the alerts are silenced "for good"; the file says paused for the cutover window, then re-enabled. Different facts; the file is the authority.
    - Evidence: MEMORY.md L18 vs project_billing_alerts.md L3.
    - Suggested action: modify (rewrite the hook from the description).
@@ -44,6 +44,10 @@
 6. **project_cdn_cutover.md** [staleness] — DNS flip "scheduled for 2026-05-20," 13 days past, no recorded outcome. Lint cannot know what happened.
    - Evidence: project_cdn_cutover.md L10 vs ran_at 2026-06-02.
    - Suggested action: flag (run `/dream rot` to cross-check against state/ and sessions/).
+
+7. **project_release_log.md** [build_log_bloat] — a `project` memory that became a release log: four dated version blocks with PR numbers, and it contradicts itself (L14 ships v2.3, L18 still calls v2.2 current). One durable rule is buried at the end.
+   - Evidence: the log-shape grep matches this file and no other project memory (1 of 5); L14 vs L18. Duplication against a repo changelog **not checked** — no work repo in reach on this run.
+   - Suggested action: flag (name the log paragraphs vs the signed-URL rule; re-run from inside the repo to check the changelog claim).
 
 ### Flagged for review (1)
 1. **feedback_staging_first.md** [contradiction] — "never push an image straight to prod" vs `feedback_hotfix_direct.md`: "for sev-1, push straight to prod." Both load every session; an agent following one violates the other.

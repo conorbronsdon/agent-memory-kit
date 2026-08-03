@@ -14,7 +14,7 @@ Unlike rot, lint does not need `state/` or `sessions/`. It runs standalone again
 
 ## The checks
 
-Run all nine, in order. Every finding needs: action, evidence (file plus line), confidence.
+Run all ten, in order. Every finding needs: action, evidence (file plus line), confidence.
 
 ### 1. Index drift
 
@@ -86,13 +86,30 @@ A duplicate row is **never a new finding**. It means an earlier archive stopped 
 
 Action: `modify` `ARCHIVE.md`, keeping the **earliest** row and dropping the later ones. The earliest is the true retirement date; the later rows are re-runs, and their `reason` text is a second guess at a decision already recorded. Confidence: high. Then file the underlying half-finished archive under check 1 so the stamp and the move actually complete — dropping the extra row alone leaves the file live in the memory root.
 
+### 10. Build-log bloat
+
+A `project` memory that has turned into a changelog: a running list of what shipped when, rather than one fact. Found twice in a ~330-file store, about 9KB between them.
+
+The shape is greppable from the memory dir alone — several version strings, `Session N` or `shipped vX` headings, PR numbers carrying status:
+
+```sh
+grep -lE '^\*\*(Session [0-9]+|v[0-9]+\.[0-9]+)|shipped v[0-9]' project_*.md
+```
+
+Two tiers, and keeping them apart is the whole point:
+
+- **Standalone (always available).** A log is many facts in one file, which `docs/memory-format.md` rules out ("One fact per file... if you're tempted to use 'and,' it's two memories"), and it drifts against *itself*: one block says v2.3 shipped, a later line still calls v2.2 current. Both cannot be true, and neither needs the repo to see. Say which paragraphs are log and which are the durable rule worth keeping.
+- **Duplication (only when a work repo is at hand).** The stronger finding — "the repo already records this, and `docs/memory-format.md` says don't save what the repo already records" — is a claim *about the repo*, so it needs one. Cite the path: `git ls-files CHANGELOG.md docs/releases`. Lint runs standalone against any memory directory, so with no repo in reach, **do not assert the duplication**; report the shape and say the duplication was not checked. This is the same hedge check 3's shipped-work heuristic carries, for the same reason.
+
+Action: `flag` naming log paragraphs versus durable ones. Never `modify` — deciding what survives a rewrite is a content judgment, and a wrong cut deletes the one durable rule buried in the log. Confidence: medium; the shape is mechanical, the split is not.
+
 ## Output
 
 Write `proposals.json` and `REPORT.md` to `{MEMORY_DIR}/.dreams/{ISO-timestamp}/`.
 
 ### `proposals.json`
 
-Same schema as every curator (`docs/curation.md`), plus a `check` field naming which of the nine checks fired, so findings group cleanly:
+Same schema as every curator (`docs/curation.md`), plus a `check` field naming which of the ten checks fired, so findings group cleanly:
 
 ```json
 {
@@ -128,7 +145,7 @@ House format: counts, findings grouped by confidence (highest-confidence wins fi
 # Dream pass: lint — {ISO-timestamp}
 
 **Audited:** N memory files + the index
-**Checks:** index sync, links, dates, duplicates, contradictions, references, types, index-only content, duplicate archive rows
+**Checks:** index sync, links, dates, duplicates, contradictions, references, types, index-only content, duplicate archive rows, build-log bloat
 
 ## Findings
 

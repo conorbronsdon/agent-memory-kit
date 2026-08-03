@@ -1,7 +1,7 @@
 {
   "curator": "lint",
   "ran_at": "2026-06-02T10:14:09Z",
-  "inputs_summary": { "memory_files_audited": 9, "index_entries": 10, "local_paths_verified": 1 },
+  "inputs_summary": { "memory_files_audited": 10, "index_entries": 11, "local_paths_verified": 1 },
   "proposals": [
     {
       "id": "lint-001",
@@ -10,7 +10,7 @@
       "target": "MEMORY.md",
       "reasoning": "Index line points at reference_build_flags.md, which does not exist in memory/ and has no row in ARCHIVE.md. A dead index line wastes recall budget and erodes trust in the index. Drop it.",
       "evidence": [
-        "MEMORY.md L24: '- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.'",
+        "MEMORY.md L25: '- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.'",
         "checked 2026-06-02: ls memory/reference_build_flags.md: not found; no ARCHIVE.md row mentions it"
       ],
       "current_excerpt": "- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.",
@@ -168,7 +168,7 @@
       "reasoning": "The Rollbacks line under Feedback holds the whole fact and links no detail file, so this content lives only in the index. It is the one thing in the store a consolidation pass deletes outright: an ARCHIVE.md row links a file, the archived: stamp is written into a file, archive/ holds a file, and there is no file here. It also has no frontmatter, so it has no type, so no rot pass ever re-checks it. The fix is to write feedback_rollback_pin.md and shorten the line to a pointer; the curator flags rather than modifies because where the fact splits is the human's call.",
       "evidence": [
         "MEMORY.md L13: '- Rollbacks: keep the previous image tag pinned in the deploy manifest, so a rollback is a one-line revert instead of a rebuild from the last green commit.'",
-        "checked 2026-06-02: grep '^- ' MEMORY.md | grep -v '](' returns 1 of 10 index lines; no memory file covers the rollback pin"
+        "checked 2026-06-02: grep '^- ' MEMORY.md | grep -v '](' returns 1 of 11 index lines; no memory file covers the rollback pin"
       ],
       "current_excerpt": "- Rollbacks: keep the previous image tag pinned in the deploy manifest, so a rollback is a one-line revert instead of a rebuild from the last green commit.",
       "proposed_excerpt": "- [Rollback pin](feedback_rollback_pin.md): keep the previous image tag pinned in the deploy manifest so a rollback is a revert, not a rebuild.",
@@ -202,6 +202,21 @@
       "current_excerpt": "| 2026-05-29 | [Legacy image pipeline](archive/project_image_pipeline.md) | No longer relevant, image resizing moved to the CDN. |",
       "proposed_excerpt": "",
       "confidence": "high"
+    },
+    {
+      "id": "lint-015",
+      "check": "build_log_bloat",
+      "action": "flag",
+      "target": "project_release_log.md",
+      "reasoning": "This project memory is a release log, not a fact: four dated version blocks with PR numbers, against the one-fact-per-file rule in docs/memory-format.md. It already drifts against itself — L14 records v2.3 as shipped and L16 records v2.4 as cut, while L18 still calls v2.2 the current version. Only the last paragraph is durable: the 15-minute signed-URL expiry and the retry-once-on-403 rule. Flagged, not modified: deciding which paragraphs survive is a content judgment, and a wrong cut takes the one durable rule with it. Duplication against a repo changelog was NOT checked — this pass ran standalone with no work repo in reach, so the stronger 'the repo already records this' finding needs a re-run from inside the repo with git ls-files CHANGELOG.md.",
+      "evidence": [
+        "checked 2026-06-02: grep -lE '^\\*\\*(Session [0-9]+|v[0-9]+\\.[0-9]+)|shipped v[0-9]' project_*.md matches project_release_log.md and no other project memory (1 of 5)",
+        "project_release_log.md L14: '**v2.3 (2026-05-11):** flag removed, signed URLs on by default. PR #447.' vs L18: '**Current version:** v2.2. Signed URLs are next.'",
+        "docs/memory-format.md, writing rules: 'One fact per file' and 'Don't save what the repo already records'"
+      ],
+      "current_excerpt": "**Current version:** v2.2. Signed URLs are next.",
+      "proposed_excerpt": "",
+      "confidence": "medium"
     }
   ],
   "skipped": [
