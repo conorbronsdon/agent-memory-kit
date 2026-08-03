@@ -72,7 +72,7 @@ That is the entire bet of this kit, made concrete: the curator quietly stops the
 
 Rot asks whether memory still matches the world. `/dream lint` asks whether the store matches itself. A memory directory can be completely rot-free and still broken: index lines pointing at deleted files, the same fact captured twice under two names, two rules that cannot both be followed, a "revisit next week" that never became a date.
 
-[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in twelve ways — at least one per lint check — plus the artifact a lint pass produces over it:
+[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in twelve ways — covering every check that can have a defect — plus the artifact a lint pass produces over it:
 
 | Defect | Where | What lint proposes |
 |---|---|---|

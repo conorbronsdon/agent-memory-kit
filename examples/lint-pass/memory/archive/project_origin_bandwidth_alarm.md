@@ -1,9 +1,9 @@
 ---
 name: project-origin-bandwidth-alarm
 description: The origin bandwidth alarm thresholds and who to page when it fires.
-archived: 2026-05-04
 metadata:
   type: project
+archived: 2026-05-04
 ---
 
 The origin bandwidth alarm fired at 80% of the monthly per-GB allowance and paged

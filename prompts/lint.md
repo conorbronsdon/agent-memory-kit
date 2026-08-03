@@ -65,8 +65,10 @@ The four types drive curation (`docs/memory-format.md`): `user` is who the user 
 An index line that carries the fact itself instead of pointing at a detail file — a `- ` line with no `](…)` link in it. Detection:
 
 ```sh
-grep '^- ' MEMORY.md | grep -v ']('
+grep -E '^[-*] ' MEMORY.md | grep -v '](' | grep -v '\[\['
 ```
+
+Two exclusions matter. `[-*]` catches both bullet styles. And a line whose only pointer is a `[[slug]]` wikilink is **not** a finding here — check 2 says an unresolved `[[slug]]` "marks a memory worth writing later, not an error," so flagging it high-confidence here would have this check contradict that one.
 
 **Anchor on `^- `.** Without the anchor this check is unusable, because `grep -cv '](' MEMORY.md` counts headings, the blockquote, and every blank line. Measured, not asserted:
 
@@ -77,7 +79,7 @@ grep '^- ' MEMORY.md | grep -v ']('
 
 The pristine row is the point: unanchored, this check reports 11 findings against a scaffold that contains nothing. The fixture row is the check working — 1 is the seeded defect, and it is the only thing anchored counting finds. Anchor first, then count.
 
-Why this is worth a finding, and none of it depends on which agent or runner loads the store: the index is the one file every session reads and the one file under a budget (`docs/memory-format.md`: cap ~100 lines, "consolidate or archive when it fills"). Every other memory survives that trim, because all three things that make a retirement recoverable key off a *file* — `ARCHIVE.md`'s tombstone row links one, the `archived:` stamp is written into one, `archive/` holds one. A fact that exists only as an index line has nothing to stamp and nothing to move, so the trim is a plain delete with no tombstone behind it. It is also invisible to the rest of curation: no frontmatter means no `type`, and rot's audit is type-driven, so nothing ever re-checks it.
+Why this is worth a finding, and none of it depends on which agent or runner loads the store: the index is the one file every session reads, and `docs/memory-format.md` states the rule outright — "The `MEMORY.md` index holds **one line per memory**, never memory content" (line 18) — against a hard line budget of ~100 lines (line 16). Every other memory survives that trim, because all three things that make a retirement recoverable key off a *file* — `ARCHIVE.md`'s tombstone row links one, the `archived:` stamp is written into one, `archive/` holds one. A fact that exists only as an index line has nothing to stamp and nothing to move, so the trim is a plain delete with no tombstone behind it. It is also invisible to the rest of curation: rot iterates `project_*.md` and `reference_*.md` **files** (`prompts/rot.md:18`), and an index line is not a file, so nothing ever re-checks it.
 
 Action: `flag`. The fix is to write the detail file and shorten the line to a pointer, and where that split falls is the human's call. Confidence: high — the missing link is mechanical, even though the remedy is not.
 
@@ -86,8 +88,10 @@ Action: `flag`. The fix is to write the detail file and shorten the line to a po
 The same memory tombstoned more than once in `ARCHIVE.md`. Detection is mechanical: extract the link target from every row, then count duplicates.
 
 ```sh
-grep -o ']([^)]*)' ARCHIVE.md | sort | uniq -d
+grep -o '](archive/[^)]*)' ARCHIVE.md | sort | uniq -d
 ```
+
+**Scope to `](archive/`, not every link.** The `reason` column is free prose and may cite a memory: two rows retiring two *different* files, both citing the same contract doc in their reasons, make an unscoped `grep -o ']([^)]*)'` report a duplicate that does not exist. That matters more here than elsewhere, because this check's action is a high-confidence `modify` that DELETES a row — a false positive destroys a legitimate tombstone.
 
 A duplicate row is **never a new finding**. It means an earlier archive stopped after writing the row: the `archived:` stamp and the move to `archive/` never happened, so the refuse-if-already-archived guard in `docs/curation.md` — which needs the file to be *at* `archive/{slug}` — found nothing and let a later pass retire the same memory a second time. The duplicate row is the only surviving trace of that, which is what makes it worth a check: the half-finished archive it points back to is otherwise silent.
 
@@ -100,8 +104,14 @@ A `project` memory that has turned into a changelog: a running list of what ship
 The shape is greppable from the memory dir alone — several version strings, `Session N` or `shipped vX` headings, PR numbers carrying status:
 
 ```sh
-grep -lE '^\*\*(Session [0-9]+|v[0-9]+\.[0-9]+)|shipped v[0-9]' project_*.md
+for f in project_*.md; do
+  [ -e "$f" ] || break                      # fresh store has none; do not error
+  n=$(grep -cE '^[-*#[:space:]]*(\*\*)?(Session [0-9]+|v[0-9]+\.[0-9]+)' "$f")
+  [ "$n" -ge 3 ] && echo "$f ($n markers)"
+done
 ```
+
+**Count markers; do not match one.** Two things went wrong in the obvious one-liner and both are load-bearing. A top-level `|` in `'^\*\*(…)|shipped v[0-9]'` leaves the second alternative **unanchored**, so it fires on a clean one-fact memory that merely says "We shipped v3.1 last month" — an unanchored grep firing on innocent input is exactly why check 8 was reverted once already. And anchoring branch A to literal `**` in column 1 matches only one authoring style: a real release log written with `## v1.0`, `### Session 3`, and `- v1.3` bullets was **missed entirely**. Allowing heading and bullet markers before the token fixes the misses; requiring **three or more** is what separates a log from a passing mention, which no single-match grep can do.
 
 Two tiers, and keeping them apart is the whole point:
 

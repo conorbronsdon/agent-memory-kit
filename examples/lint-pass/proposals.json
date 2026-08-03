@@ -1,7 +1,11 @@
 {
   "curator": "lint",
   "ran_at": "2026-06-02T10:14:09Z",
-  "inputs_summary": { "memory_files_audited": 10, "index_entries": 11, "local_paths_verified": 1 },
+  "inputs_summary": {
+    "memory_files_audited": 10,
+    "index_entries": 11,
+    "local_paths_verified": 1
+  },
   "proposals": [
     {
       "id": "lint-001",
@@ -177,16 +181,16 @@
     {
       "id": "lint-013",
       "check": "index_drift",
-      "action": "modify",
+      "action": "archive",
       "target": "project_image_pipeline.md",
-      "reasoning": "Tombstoned in ARCHIVE.md on 2026-05-21, but the file never left the memory root and never got its archived: stamp, so every session still reads it as live. Nothing was lost, which is why no backup flags it. Finish the archive: stamp archived: 2026-05-21 (the earliest row is the true retirement date), move the file to archive/, repoint inbound links, then drop the index line. Root cause of lint-014; review them together.",
+      "reasoning": "Tombstoned in ARCHIVE.md on 2026-05-21, but the file never left the memory root and never got its archived: stamp, so every session still reads it as live. Nothing was lost, which is why no backup flags it. This needs the five-step archive action, not a modify: a modify is only an excerpt swap, so stamping archived: without the move would leave the file live AND hide it from this very check, which keys off the stamp being absent. dream-apply step 1 recognises a stamped file still in the root as a crashed run and finishes steps 4-5. Use 2026-05-21, the earliest row, as the true retirement date. Root cause of lint-014; review them together.",
       "evidence": [
         "ARCHIVE.md L10: '| 2026-05-21 | [Legacy image pipeline](archive/project_image_pipeline.md) | Pipeline retired; the CDN resizes at the edge now. |'",
         "checked 2026-06-02: test -f archive/project_image_pipeline.md fails; the root copy exists and grep '^archived:' project_image_pipeline.md returns nothing",
         "MEMORY.md L19: '- [Legacy image pipeline](project_image_pipeline.md): origin-side image resizing, decommissioned at the CDN cutover.'"
       ],
-      "current_excerpt": "metadata:",
-      "proposed_excerpt": "archived: 2026-05-21\nmetadata:",
+      "current_excerpt": "Static image resizing runs in the legacy pipeline on the origin servers. The new\nCDN resizes at the edge, so the pipeline is decommissioned at the cutover.",
+      "proposed_excerpt": "",
       "confidence": "high"
     },
     {
@@ -220,7 +224,13 @@
     }
   ],
   "skipped": [
-    { "target": "user_timezone.md", "reason": "Content is clean; its only issue (missing index line) is filed against MEMORY.md as lint-002." },
-    { "target": "archive/project_origin_bandwidth_alarm.md", "reason": "A completed retirement: under archive/, stamped archived: 2026-05-04, exactly one ARCHIVE.md row. Files under archive/ are out of scope by design." }
+    {
+      "target": "user_timezone.md",
+      "reason": "Content is clean; its only issue (missing index line) is filed against MEMORY.md as lint-002."
+    },
+    {
+      "target": "archive/project_origin_bandwidth_alarm.md",
+      "reason": "A completed retirement: under archive/, stamped archived: 2026-05-04, exactly one ARCHIVE.md row. Files under archive/ are out of scope by design."
+    }
   ]
 }
