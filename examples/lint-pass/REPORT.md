@@ -19,7 +19,7 @@
    - Evidence: `grep '^| 20' ARCHIVE.md | cut -d'|' -f3 | grep -o '](archive/[^)]*)' | sort | uniq -d` returns `](archive/project_image_pipeline.md)`; rows at L10 and L11.
    - Suggested action: modify (keep the 2026-05-21 row, drop the 2026-05-29 one; pairs with the finding above).
 5. **MEMORY.md** [index_only_content] — the Rollbacks line under Feedback holds the fact itself and links no detail file, so this content exists nowhere else in the store.
-   - Evidence: MEMORY.md L13; anchored `grep -E '^[-*] ' MEMORY.md | grep -v '](' | grep -vE '^[-*] *[[][[][^]]*[]][]] *$'` returns 1 of 11 index lines.
+   - Evidence: MEMORY.md L13; anchored `grep -E '^ *[-*] ' MEMORY.md | grep -vE '\]\([^)]*\.md\)' | grep -vE '^ *[-*] *\[\[[^]]*\]\] *$'` returns 1 of 11 index lines.
    - Suggested action: flag (write the detail file, shorten the line to a pointer).
 6. **reference_key_rotation.md** [unverifiable_reference] — points at `scripts/rotate-keys.sh`, which is not in the repo.
    - Evidence: `test -e` and `git ls-files scripts/` both come up empty (checked 2026-06-02).
