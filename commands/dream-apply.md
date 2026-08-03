@@ -45,7 +45,7 @@ c. On **Accept**:
         ```sh
         test -f "$MEMORY_DIR/archive/{target}"                    # A: already under archive/
         test -f "$MEMORY_DIR/{target}"                            # B: still live in the root
-        grep -cF "](archive/{target})" "$MEMORY_DIR/ARCHIVE.md" 2>/dev/null || echo 0   # C: tombstone rows
+        { grep -cF "](archive/{target})" "$MEMORY_DIR/ARCHIVE.md" 2>/dev/null || echo 0; } | head -1   # C: tombstone rows
         ```
         | A | B | C | Do |
         |---|---|---|---|
@@ -58,6 +58,16 @@ c. On **Accept**:
         **A missing `ARCHIVE.md` means C is 0, not an error.** A store archiving its first memory has no such
         file — bare `grep -cF` there exits 2 with empty output, which is neither a count nor a hit, so the
         `|| echo 0` above is load-bearing. Step 2's append creates the file.
+
+        **The braces and `head -1` are load-bearing too, for the opposite case.** When `ARCHIVE.md` exists but
+        holds no matching row, `grep -c` prints `0` *and* exits 1 — so `|| echo 0` fires in addition to grep's
+        own output and C becomes two lines, `0\n0`. That is the ordinary-archive path in any store that has
+        ever archived anything, so it is the most common branch, not an edge case. Two lines match neither
+        the `0` cell nor `>0`: `[ "$C" = "0" ]` is false and falls to Resume, while `[ "$C" -gt 0 ]` throws
+        `integer expression expected`. Resume skips step 2, so no row is ever appended, and steps 4-5 still
+        `git mv` the file into `archive/` and drop its index line — retiring a memory with no tombstone and
+        no index entry, which nothing in the kit can then find. Measured: missing file `0`; exists-no-match
+        `0\n0`; exists-two-rows `2`. With the braces, all three yield one line.
 
         **B is not optional.** Without it, a target that vanished between dream and apply takes the ordinary branch, step 2 appends a tombstone row, and steps 3-4 then fail against a file that is not there — leaving a row with nothing behind it, which is exactly the row-only half-finished state this section exists to prevent. The Safety section anticipates the same dream-to-apply drift for `modify`; `archive` needs its own guard.
 
