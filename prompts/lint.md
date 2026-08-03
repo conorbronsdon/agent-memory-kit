@@ -68,7 +68,14 @@ An index line that carries the fact itself instead of pointing at a detail file 
 grep '^- ' MEMORY.md | grep -v ']('
 ```
 
-**Anchor on `^- `.** Without the anchor this check is unusable: `grep -cv '](' MEMORY.md` counts headings, the blockquote, and every blank line, so it returns 11 against the *empty* starter index in `context-starter/memory/` and 13 against the lint fixture. Anchored, both return 0. Anchor first, then count.
+**Anchor on `^- `.** Without the anchor this check is unusable, because `grep -cv '](' MEMORY.md` counts headings, the blockquote, and every blank line. Measured, not asserted:
+
+| | unanchored | anchored |
+|---|---|---|
+| `context-starter/memory/` (pristine, no defect) | **11** | **0** |
+| `examples/lint-pass/memory/` (one seeded defect) | **14** | **1** |
+
+The pristine row is the point: unanchored, this check reports 11 findings against a scaffold that contains nothing. The fixture row is the check working — 1 is the seeded defect, and it is the only thing anchored counting finds. Anchor first, then count.
 
 Why this is worth a finding, and none of it depends on which agent or runner loads the store: the index is the one file every session reads and the one file under a budget (`docs/memory-format.md`: cap ~100 lines, "consolidate or archive when it fills"). Every other memory survives that trim, because all three things that make a retirement recoverable key off a *file* — `ARCHIVE.md`'s tombstone row links one, the `archived:` stamp is written into one, `archive/` holds one. A fact that exists only as an index line has nothing to stamp and nothing to move, so the trim is a plain delete with no tombstone behind it. It is also invisible to the rest of curation: no frontmatter means no `type`, and rot's audit is type-driven, so nothing ever re-checks it.
 
