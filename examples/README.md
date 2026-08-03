@@ -72,12 +72,14 @@ That is the entire bet of this kit, made concrete: the curator quietly stops the
 
 Rot asks whether memory still matches the world. `/dream lint` asks whether the store matches itself. A memory directory can be completely rot-free and still broken: index lines pointing at deleted files, the same fact captured twice under two names, two rules that cannot both be followed, a "revisit next week" that never became a date.
 
-[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in nine ways — at least one per lint check — plus the artifact a lint pass produces over it:
+[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in eleven ways — at least one per lint check — plus the artifact a lint pass produces over it:
 
 | Defect | Where | What lint proposes |
 |---|---|---|
 | Index line, no file | `MEMORY.md` points at a deleted `reference_build_flags.md` | drop the dead line (high confidence) |
 | File, no index line | `user_timezone.md` is never recalled | add the index line (high confidence) |
+| Half-finished archive | `project_image_pipeline.md` is tombstoned in `ARCHIVE.md` but still live in the memory root, unstamped | finish it: stamp, move to `archive/`, repoint links, drop the index line (high) |
+| Duplicate archive rows | the same pipeline is tombstoned twice, 2026-05-21 and 2026-05-29 | keep the earliest row, drop the re-run (high) |
 | Hook contradicts the file | index says alerts silenced "for good"; the file says paused, then re-enabled | rewrite the hook from the file (medium) |
 | Duplicate fact | `project_cdn_cutover.md` and `project_cdn_migration.md` are one CDN move in two files | fold the unique detail into one, archive the other (paired proposals) |
 | Stale dates | a DNS flip "scheduled for 2026-05-20," long past; a "revisit next week" never made absolute | convert what has an anchor; flag the rest for a rot pass |

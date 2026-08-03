@@ -1,7 +1,7 @@
 {
   "curator": "lint",
   "ran_at": "2026-06-02T10:14:09Z",
-  "inputs_summary": { "memory_files_audited": 8, "index_entries": 9, "local_paths_verified": 1 },
+  "inputs_summary": { "memory_files_audited": 9, "index_entries": 10, "local_paths_verified": 1 },
   "proposals": [
     {
       "id": "lint-001",
@@ -10,7 +10,7 @@
       "target": "MEMORY.md",
       "reasoning": "Index line points at reference_build_flags.md, which does not exist in memory/ and has no row in ARCHIVE.md. A dead index line wastes recall budget and erodes trust in the index. Drop it.",
       "evidence": [
-        "MEMORY.md L23: '- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.'",
+        "MEMORY.md L24: '- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.'",
         "checked 2026-06-02: ls memory/reference_build_flags.md: not found; no ARCHIVE.md row mentions it"
       ],
       "current_excerpt": "- [Legacy build flags](reference_build_flags.md): compiler flags for the legacy build.",
@@ -168,14 +168,44 @@
       "reasoning": "The Rollbacks line under Feedback holds the whole fact and links no detail file, so this content lives only in the index. It is the one thing in the store a consolidation pass deletes outright: an ARCHIVE.md row links a file, the archived: stamp is written into a file, archive/ holds a file, and there is no file here. It also has no frontmatter, so it has no type, so no rot pass ever re-checks it. The fix is to write feedback_rollback_pin.md and shorten the line to a pointer; the curator flags rather than modifies because where the fact splits is the human's call.",
       "evidence": [
         "MEMORY.md L13: '- Rollbacks: keep the previous image tag pinned in the deploy manifest, so a rollback is a one-line revert instead of a rebuild from the last green commit.'",
-        "checked 2026-06-02: grep '^- ' MEMORY.md | grep -v '](' returns 1 of 9 index lines; no memory file covers the rollback pin"
+        "checked 2026-06-02: grep '^- ' MEMORY.md | grep -v '](' returns 1 of 10 index lines; no memory file covers the rollback pin"
       ],
       "current_excerpt": "- Rollbacks: keep the previous image tag pinned in the deploy manifest, so a rollback is a one-line revert instead of a rebuild from the last green commit.",
       "proposed_excerpt": "- [Rollback pin](feedback_rollback_pin.md): keep the previous image tag pinned in the deploy manifest so a rollback is a revert, not a rebuild.",
       "confidence": "high"
+    },
+    {
+      "id": "lint-013",
+      "check": "index_drift",
+      "action": "modify",
+      "target": "project_image_pipeline.md",
+      "reasoning": "Tombstoned in ARCHIVE.md on 2026-05-21, but the file never left the memory root and never got its archived: stamp, so every session still reads it as live. Nothing was lost, which is why no backup flags it. Finish the archive: stamp archived: 2026-05-21 (the earliest row is the true retirement date), move the file to archive/, repoint inbound links, then drop the index line. Root cause of lint-014; review them together.",
+      "evidence": [
+        "ARCHIVE.md L10: '| 2026-05-21 | [Legacy image pipeline](archive/project_image_pipeline.md) | Pipeline retired; the CDN resizes at the edge now. |'",
+        "checked 2026-06-02: test -f archive/project_image_pipeline.md fails; the root copy exists and grep '^archived:' project_image_pipeline.md returns nothing",
+        "MEMORY.md L19: '- [Legacy image pipeline](project_image_pipeline.md): origin-side image resizing, decommissioned at the CDN cutover.'"
+      ],
+      "current_excerpt": "metadata:",
+      "proposed_excerpt": "archived: 2026-05-21\nmetadata:",
+      "confidence": "high"
+    },
+    {
+      "id": "lint-014",
+      "check": "duplicate_archive_row",
+      "action": "modify",
+      "target": "ARCHIVE.md",
+      "reasoning": "project_image_pipeline.md is tombstoned twice. That is never a second retirement: the 2026-05-21 archive stopped after writing the row, so the refuse-if-already-archived guard (which tests for the file at archive/{slug}) found nothing on 2026-05-29 and wrote a second row over the same decision. Keep the earliest row, which carries the true retirement date and the reason recorded at the time, and drop the later one. Dropping the row is not the whole fix; lint-013 completes the archive itself.",
+      "evidence": [
+        "checked 2026-06-02: grep -o ']([^)]*)' ARCHIVE.md | sort | uniq -d returns '](archive/project_image_pipeline.md)' — 1 duplicated target out of 3 rows",
+        "ARCHIVE.md L11: '| 2026-05-29 | [Legacy image pipeline](archive/project_image_pipeline.md) | No longer relevant, image resizing moved to the CDN. |'"
+      ],
+      "current_excerpt": "| 2026-05-29 | [Legacy image pipeline](archive/project_image_pipeline.md) | No longer relevant, image resizing moved to the CDN. |",
+      "proposed_excerpt": "",
+      "confidence": "high"
     }
   ],
   "skipped": [
-    { "target": "user_timezone.md", "reason": "Content is clean; its only issue (missing index line) is filed against MEMORY.md as lint-002." }
+    { "target": "user_timezone.md", "reason": "Content is clean; its only issue (missing index line) is filed against MEMORY.md as lint-002." },
+    { "target": "archive/project_origin_bandwidth_alarm.md", "reason": "A completed retirement: under archive/, stamped archived: 2026-05-04, exactly one ARCHIVE.md row. Files under archive/ are out of scope by design." }
   ]
 }

@@ -1,21 +1,27 @@
 # Dream pass: lint — 2026-06-02T10:14:09Z
 
-**Audited:** 8 memory files + the index
-**Checks:** index sync, links, dates, duplicates, contradictions, references, types, index-only content
+**Audited:** 9 memory files + the index, plus ARCHIVE.md
+**Checks:** index sync, links, dates, duplicates, contradictions, references, types, index-only content, duplicate archive rows
 
 ## Findings
 
-### High confidence (4)
+### High confidence (6)
 1. **MEMORY.md** [index_drift] — index line points at `reference_build_flags.md`, which does not exist and was never archived.
-   - Evidence: MEMORY.md L23; `ls` finds no such file, ARCHIVE.md has no row for it.
+   - Evidence: MEMORY.md L24; `ls` finds no such file, ARCHIVE.md has no row for it.
    - Suggested action: modify (drop the dead line).
 2. **MEMORY.md** [index_drift] — `user_timezone.md` exists but has no index line, so it is never recalled.
    - Evidence: file present in memory/; `grep user_timezone MEMORY.md` finds nothing.
    - Suggested action: modify (add a User line built from the file's description).
-3. **MEMORY.md** [index_only_content] — the Rollbacks line under Feedback holds the fact itself and links no detail file, so this content exists nowhere else in the store.
-   - Evidence: MEMORY.md L13; anchored `grep '^- ' MEMORY.md | grep -v '](' ` returns 1 of 9 index lines.
+3. **project_image_pipeline.md** [index_drift] — tombstoned in `ARCHIVE.md` on 2026-05-21 but still sitting in the memory root, unstamped, so every session still reads it as live.
+   - Evidence: two ARCHIVE.md rows link `archive/project_image_pipeline.md`; `test -f archive/project_image_pipeline.md` fails, the root copy exists, and it has no `archived:` line.
+   - Suggested action: modify (finish the archive: stamp, move to `archive/`, repoint inbound links, drop the index line).
+4. **ARCHIVE.md** [duplicate_archive_row] — `project_image_pipeline.md` is tombstoned twice, 2026-05-21 and 2026-05-29. The second row is a re-run, not a second retirement.
+   - Evidence: `grep -o ']([^)]*)' ARCHIVE.md | sort | uniq -d` returns `](archive/project_image_pipeline.md)`; rows at L10 and L11.
+   - Suggested action: modify (keep the 2026-05-21 row, drop the 2026-05-29 one; pairs with the finding above).
+5. **MEMORY.md** [index_only_content] — the Rollbacks line under Feedback holds the fact itself and links no detail file, so this content exists nowhere else in the store.
+   - Evidence: MEMORY.md L13; anchored `grep '^- ' MEMORY.md | grep -v '](' ` returns 1 of 10 index lines.
    - Suggested action: flag (write the detail file, shorten the line to a pointer).
-4. **reference_key_rotation.md** [unverifiable_reference] — points at `scripts/rotate-keys.sh`, which is not in the repo.
+6. **reference_key_rotation.md** [unverifiable_reference] — points at `scripts/rotate-keys.sh`, which is not in the repo.
    - Evidence: `test -e` and `git ls-files scripts/` both come up empty (checked 2026-06-02).
    - Suggested action: flag (the human knows where the rotation procedure went).
 
@@ -50,6 +56,7 @@ Placeholders, not errors. Each marks a memory worth writing later.
 
 ## Skipped
 - user_timezone.md — content is clean; its missing index line is filed against MEMORY.md above.
+- archive/project_origin_bandwidth_alarm.md — under `archive/`, stamped `archived: 2026-05-04`, one ARCHIVE.md row. A completed retirement is out of scope by design.
 
 ## Apply
 Run `/dream-apply 2026-06-02T10:14:09Z` to review and apply.

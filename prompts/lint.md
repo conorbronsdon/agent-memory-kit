@@ -14,7 +14,7 @@ Unlike rot, lint does not need `state/` or `sessions/`. It runs standalone again
 
 ## The checks
 
-Run all eight, in order. Every finding needs: action, evidence (file plus line), confidence.
+Run all nine, in order. Every finding needs: action, evidence (file plus line), confidence.
 
 ### 1. Index drift
 
@@ -74,13 +74,25 @@ Why this is worth a finding, and none of it depends on which agent or runner loa
 
 Action: `flag`. The fix is to write the detail file and shorten the line to a pointer, and where that split falls is the human's call. Confidence: high — the missing link is mechanical, even though the remedy is not.
 
+### 9. Duplicate archive rows
+
+The same memory tombstoned more than once in `ARCHIVE.md`. Detection is mechanical: extract the link target from every row, then count duplicates.
+
+```sh
+grep -o ']([^)]*)' ARCHIVE.md | sort | uniq -d
+```
+
+A duplicate row is **never a new finding**. It means an earlier archive stopped after writing the row: the `archived:` stamp and the move to `archive/` never happened, so the refuse-if-already-archived guard in `docs/curation.md` — which needs the file to be *at* `archive/{slug}` — found nothing and let a later pass retire the same memory a second time. The duplicate row is the only surviving trace of that, which is what makes it worth a check: the half-finished archive it points back to is otherwise silent.
+
+Action: `modify` `ARCHIVE.md`, keeping the **earliest** row and dropping the later ones. The earliest is the true retirement date; the later rows are re-runs, and their `reason` text is a second guess at a decision already recorded. Confidence: high. Then file the underlying half-finished archive under check 1 so the stamp and the move actually complete — dropping the extra row alone leaves the file live in the memory root.
+
 ## Output
 
 Write `proposals.json` and `REPORT.md` to `{MEMORY_DIR}/.dreams/{ISO-timestamp}/`.
 
 ### `proposals.json`
 
-Same schema as every curator (`docs/curation.md`), plus a `check` field naming which of the eight checks fired, so findings group cleanly:
+Same schema as every curator (`docs/curation.md`), plus a `check` field naming which of the nine checks fired, so findings group cleanly:
 
 ```json
 {
@@ -116,7 +128,7 @@ House format: counts, findings grouped by confidence (highest-confidence wins fi
 # Dream pass: lint — {ISO-timestamp}
 
 **Audited:** N memory files + the index
-**Checks:** index sync, links, dates, duplicates, contradictions, references, types, index-only content
+**Checks:** index sync, links, dates, duplicates, contradictions, references, types, index-only content, duplicate archive rows
 
 ## Findings
 
