@@ -10,7 +10,7 @@
 
 ---
 
-![A /dream lint pass in Claude Code: seven structural checks over the memory store, then evidence-cited proposals — synthetic fixture data from examples/lint-pass](docs/demo.gif)
+![A /dream lint pass in Claude Code: structural checks over the memory store, then evidence-cited proposals — synthetic fixture data from examples/lint-pass](docs/demo.gif)
 
 I gave my coding agent a memory. Two weeks later it was lying to me. Not corrupted, not lost: confidently wrong. A vendor approval it still called "pending" a week after it cleared. Two workflow rules that contradicted each other, both loaded into every session.
 

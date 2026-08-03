@@ -72,7 +72,7 @@ That is the entire bet of this kit, made concrete: the curator quietly stops the
 
 Rot asks whether memory still matches the world. `/dream lint` asks whether the store matches itself. A memory directory can be completely rot-free and still broken: index lines pointing at deleted files, the same fact captured twice under two names, two rules that cannot both be followed, a "revisit next week" that never became a date.
 
-[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in seven ways (one per lint check), plus the artifact a lint pass produces over it:
+[`lint-pass/`](lint-pass/) ships its own small fixture, [`lint-pass/memory/`](lint-pass/memory/), deliberately broken in eight ways — at least one per lint check — plus the artifact a lint pass produces over it:
 
 | Defect | Where | What lint proposes |
 |---|---|---|
@@ -82,6 +82,7 @@ Rot asks whether memory still matches the world. `/dream lint` asks whether the 
 | Duplicate fact | `project_cdn_cutover.md` and `project_cdn_migration.md` are one CDN move in two files | fold the unique detail into one, archive the other (paired proposals) |
 | Stale dates | a DNS flip "scheduled for 2026-05-20," long past; a "revisit next week" never made absolute | convert what has an anchor; flag the rest for a rot pass |
 | Contradiction | "never push straight to prod" vs "for sev-1, push straight to prod" | flag with both files quoted; never auto-resolved |
+| Dead local path | `reference_key_rotation.md` points at a `scripts/rotate-keys.sh` the repo does not have | flag with the `test -e` / `git ls-files` result quoted (high) |
 | Misfiled type | a how-to-work rule typed `reference` | retype to `feedback` (medium) |
 
 The unresolved `[[incident-runbook]]` link is listed as info only: per [`docs/memory-format.md`](../docs/memory-format.md), an unresolved link is a placeholder for a memory worth writing later, not an error.
