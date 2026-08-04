@@ -16,7 +16,7 @@ I gave my coding agent a memory. Two weeks later it was lying to me. Not corrupt
 
 Everyone is building agent memory. Almost nobody is building the part that keeps it true. A memory store with no curator does not fade gracefully. It rots, and a confidently-stated stale fact is worse than no memory at all.
 
-This is the curation loop, on its own. Plain markdown and JSON. No vector store, no database, no SaaS. Five slash commands you can drop into Claude Code (or any agent that runs a prompt as a procedure) in two minutes.
+This is the curation loop, on its own — the memory-hygiene leg of trust infrastructure for agents. Plain markdown and JSON. No vector store, no database, no SaaS. Five slash commands you can drop into Claude Code (or any agent that runs a prompt as a procedure) in two minutes.
 
 | Beat | Command | Job |
 |---|---|---|
