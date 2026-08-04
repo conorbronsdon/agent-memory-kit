@@ -42,7 +42,12 @@ Read `prompts/{curator}.md` in full — it's your role + output schema for the r
 Per the curator's required inputs (rot needs all of these; lint needs only the memory dir plus cheap existence checks, per its prompt):
 - `ls $MEMORY_DIR/*.md` and read each `project_*` / `reference_*` (skip `user_`/`feedback_` unless the curator asks).
 - Read `state/*.md` (decisions, blockers, current — whichever exist).
-- `find sessions/ -name "*.md" -mtime -14` and read each.
+- Select session logs **by filename date, never by mtime**, and read each:
+  ```
+  CUT=$(date -u -d '14 days ago' +%F 2>/dev/null || date -u -v-14d +%F)
+  ls sessions/*.md | sed 's|.*/||' | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}\.md$' | sort | awk -v c="$CUT.md" '$0 >= c'
+  ```
+  (Why not `find -mtime -14`: a git history rewrite resets mtime on every tracked file, after which it matches the whole directory and silently blows up the input set. Dated filenames sort lexically, so the compare stays exact through any rewrite.)
 - `git log --since="14 days ago" --oneline`.
 
 ## 6. Write `inputs.json`
@@ -82,4 +87,5 @@ Review and apply: /dream-apply {TS}
 
 - Curator MUST NOT modify any input file. Read-only on `memory/`, `state/`, `sessions/`.
 - Curator MUST NOT push the memory git repo anywhere. Local-only by design.
+- Curator outputs MUST NOT carry content your memory's scope rules exclude (employer identifiers, internal project names, other repos' state). Session logs may contain residue that earlier filters missed — exclude it from proposals rather than propagating it into memory.
 - If `$ARGUMENTS` names a curator that doesn't exist yet, refuse and list what's available.
