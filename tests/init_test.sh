@@ -6,7 +6,7 @@ trap 'rm -rf "$TMP_ROOT"' EXIT HUP INT TERM
 fail() { echo "not ok - $*" >&2; exit 1; }
 assert_eq() { [ "$1" = "$2" ] || fail "$3 (got '$1', want '$2')"; }
 git_env() { config=$1; shift; env -u GIT_AUTHOR_NAME -u GIT_AUTHOR_EMAIL -u GIT_COMMITTER_NAME -u GIT_COMMITTER_EMAIL GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL="$config" "$@"; }
-run_init() { fixture=$1; git_env "$fixture/gitconfig" "$ROOT/init.sh" --path "$fixture/context"; }
+run_init() { fixture=$1; git_env "$fixture/gitconfig" sh "$ROOT/init.sh" --path "$fixture/context"; }
 configure_identity() { git config --file "$1/gitconfig" user.name "Test User"; git config --file "$1/gitconfig" user.email "test@local.invalid"; }
 
 mkdir -p "$TMP_ROOT/no-identity"
