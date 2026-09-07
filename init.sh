@@ -112,11 +112,42 @@ else
   echo "  wrote: ${MEMORY_DIR#$TARGET/}/archive/.gitkeep"
 fi
 
-if [ -d "$MEMORY_DIR/.git" ]; then
-  echo "  memory git: already a repo (left alone)"
+memory_repo_prefix() {
+  ( cd "$MEMORY_DIR" && git rev-parse --show-prefix 2>/dev/null ) || return 1
+}
+
+REPO_PREFIX=$(memory_repo_prefix || printf '__not_a_repo__')
+if [ -z "$REPO_PREFIX" ]; then
+  if ( cd "$MEMORY_DIR" && git rev-parse --verify HEAD >/dev/null 2>&1 ); then
+    echo "  memory git: already a repo (left alone)"
+  else
+    echo "init.sh: memory git repository exists but has no seed commit" >&2
+    echo "         Review its staged files and create the initial commit manually." >&2
+    exit 1
+  fi
 else
-  ( cd "$MEMORY_DIR" && git init -q && git add -A >/dev/null 2>&1 \
-    && git commit -q -m "seed memory" >/dev/null 2>&1 || true )
+  # A surrounding context repository does not make memory/ its own repository.
+  # Stage only files owned by this installer: pre-existing user files and any
+  # unrelated staged paths must never leak into the seed commit.
+  if [ -e "$MEMORY_DIR/.git" ] || [ -L "$MEMORY_DIR/.git" ]; then
+    echo "init.sh: $MEMORY_DIR/.git exists but is not a usable repository" >&2
+    echo "         Fix or remove it, then rerun init.sh." >&2
+    exit 1
+  fi
+  ( cd "$MEMORY_DIR" && git init -q ) || {
+    echo "init.sh: could not initialize the memory repository" >&2
+    exit 1
+  }
+  (
+    cd "$MEMORY_DIR"
+    git add -- MEMORY.md ARCHIVE.md archive/.gitkeep
+    git commit -q -m "seed memory" -- MEMORY.md ARCHIVE.md archive/.gitkeep
+  ) || {
+    echo "init.sh: memory repo was initialized, but the seed commit failed" >&2
+    echo "         The repository and staged scaffold were preserved for review." >&2
+    echo "         Fix the reported git error and create the seed commit manually." >&2
+    exit 1
+  }
   echo "  memory git: initialized + seeded (local-only, no remote)"
 fi
 
