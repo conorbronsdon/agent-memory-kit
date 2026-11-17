@@ -14,7 +14,7 @@ assert_eq() { [ "$1" = "$2" ] || fail "$3 (got '$1', want '$2')"; }
 unpinned_uses() {
   tr -d '\r' \
     | sed -n -E "s/^[[:space:]]*(-[[:space:]]+)?uses:[[:space:]]*[\"']?([^[:space:]\"'#]+)[\"']?[[:space:]]*(#.*)?\$/\\2 \\3/p" \
-    | while IFS=' ' read -r ref comment; do
+    | while IFS=' ' read -r ref comment || [ -n "$ref" ]; do
         case $ref in ./*|docker://*) continue ;; esac
         if ! printf '%s\n' "$ref" | grep -Eq '^[^@]+@[0-9a-f]{40}$'; then
           echo "$ref"
@@ -32,6 +32,11 @@ GOT=$(printf '%s\n' \
   "        uses: 'owner/action@main'" | unpinned_uses)
 assert_eq "$GOT" "actions/checkout@v4${NL}actions/setup-node@49933ea${NL}owner/action@main" "parser missed a tag, short SHA or branch ref"
 echo "ok - parser flags a tag, a short SHA and a branch ref"
+
+# A last line with no trailing newline is still read (`read` returns non-zero on it).
+GOT=$(printf '%s' '      - uses: actions/setup-node@v4' | unpinned_uses)
+assert_eq "$GOT" "actions/setup-node@v4" "parser skipped an unpinned uses: on a last line with no newline"
+echo "ok - parser flags an unpinned uses: on a last line with no trailing newline"
 
 SHA=11d5960a326750d5838078e36cf38b85af677262
 GOT=$(printf '%s\n' \
