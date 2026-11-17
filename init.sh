@@ -11,6 +11,7 @@
 #
 #   --path DIR         Where to scaffold the context (default: current dir).
 #   --memory-dir DIR   Where the memory repo lives (default: <path>/memory).
+#                      A relative DIR resolves against the current dir.
 #                      Point this at Claude Code's per-project store if you
 #                      prefer that over an in-repo memory dir.
 #   --commands local   Install commands to <path>/.claude/commands (default).
@@ -38,7 +39,7 @@ while [ $# -gt 0 ]; do
     --commands)    COMMANDS_SCOPE="$2"; shift 2 ;;
     --force)       FORCE=1; shift ;;
     --help|-h)
-      sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'
       exit 0 ;;
     *)
       echo "init.sh: unknown argument '$1' (try --help)" >&2
@@ -49,6 +50,11 @@ done
 mkdir -p "$TARGET"
 TARGET=$(CDPATH= cd -- "$TARGET" && pwd)
 [ -n "$MEMORY_DIR" ] || MEMORY_DIR="$TARGET/memory"
+# Resolve to an absolute path (relative to where init.sh was run, like --path).
+# The printed `export AGENT_MEMORY_DIR=...` is read from the agent's cwd, so a
+# relative value would point somewhere else entirely.
+mkdir -p "$MEMORY_DIR"
+MEMORY_DIR=$(CDPATH= cd -- "$MEMORY_DIR" && pwd)
 
 echo "agent-memory-kit: scaffolding into $TARGET"
 
