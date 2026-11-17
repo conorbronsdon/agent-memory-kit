@@ -94,3 +94,22 @@ mkdir -p "$TMP_ROOT/direct"; configure_identity "$TMP_ROOT/direct"
 git_env "$TMP_ROOT/direct/gitconfig" "$ROOT/init.sh" --path "$TMP_ROOT/direct/context" >"$TMP_ROOT/direct/output" || fail "direct ./init.sh invocation failed"
 grep -q 'initialized + seeded' "$TMP_ROOT/direct/output" || fail "direct invocation did not seed memory"
 echo "ok - init.sh runs directly as the README documents"
+
+# A relative --memory-dir resolves against the invoking directory, and the
+# printed AGENT_MEMORY_DIR export must be absolute: the agent reads it from the
+# context dir, where a relative value points somewhere else.
+mkdir -p "$TMP_ROOT/relmem/run dir"; configure_identity "$TMP_ROOT/relmem"
+RELMEM_RUN=$(CDPATH= cd -- "$TMP_ROOT/relmem/run dir" && pwd)
+( cd "$RELMEM_RUN" && git_env "$TMP_ROOT/relmem/gitconfig" sh "$ROOT/init.sh" --path "$TMP_ROOT/relmem/my context" --memory-dir mem ) >"$TMP_ROOT/relmem/output"
+test -f "$RELMEM_RUN/mem/MEMORY.md" || fail "relative --memory-dir did not resolve against the invoking directory"
+assert_eq "$(grep -c 'export AGENT_MEMORY_DIR=' "$TMP_ROOT/relmem/output")" "1" "relative --memory-dir export line count"
+assert_eq "$(sed -n 's/^  2\. If memory lives outside this repo, export AGENT_MEMORY_DIR=//p' "$TMP_ROOT/relmem/output")" "$RELMEM_RUN/mem" "relative --memory-dir printed a non-absolute export"
+assert_eq "$(sed -n 's/^Memory dir: \(.*\)  (keep it local.*/\1/p' "$TMP_ROOT/relmem/output")" "$RELMEM_RUN/mem" "relative --memory-dir summary path"
+echo "ok - relative --memory-dir is printed as an absolute path"
+
+mkdir -p "$TMP_ROOT/absmem"; configure_identity "$TMP_ROOT/absmem"
+ABSMEM="$(CDPATH= cd -- "$TMP_ROOT/absmem" && pwd)/memory store"
+git_env "$TMP_ROOT/absmem/gitconfig" sh "$ROOT/init.sh" --path "$TMP_ROOT/absmem/context" --memory-dir "$ABSMEM" >"$TMP_ROOT/absmem/output"
+assert_eq "$(sed -n 's/^  2\. If memory lives outside this repo, export AGENT_MEMORY_DIR=//p' "$TMP_ROOT/absmem/output")" "$ABSMEM" "absolute --memory-dir export changed"
+test "$(git_env "$TMP_ROOT/absmem/gitconfig" git -C "$ABSMEM" rev-list --count HEAD)" = 1 || fail "absolute --memory-dir was not seeded"
+echo "ok - absolute --memory-dir is printed unchanged"
