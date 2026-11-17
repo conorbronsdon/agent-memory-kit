@@ -86,3 +86,11 @@ assert_eq "$(git_env "$TMP_ROOT/worktree/gitconfig" git -C "$TMP_ROOT/worktree/c
 test -f "$TMP_ROOT/worktree/context/memory/.git" || fail "worktree .git file was replaced"
 grep -q 'already a repo (left alone)' "$TMP_ROOT/worktree/output" || fail "worktree was not recognized"
 echo "ok - .git file worktrees are preserved"
+
+# The README's install step runs ./init.sh directly, so the committed file must
+# carry the executable bit; every other test above invokes it via `sh`.
+[ -x "$ROOT/init.sh" ] || fail "init.sh is not executable; README's ./init.sh would fail with Permission denied"
+mkdir -p "$TMP_ROOT/direct"; configure_identity "$TMP_ROOT/direct"
+git_env "$TMP_ROOT/direct/gitconfig" "$ROOT/init.sh" --path "$TMP_ROOT/direct/context" >"$TMP_ROOT/direct/output" || fail "direct ./init.sh invocation failed"
+grep -q 'initialized + seeded' "$TMP_ROOT/direct/output" || fail "direct invocation did not seed memory"
+echo "ok - init.sh runs directly as the README documents"

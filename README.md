@@ -104,6 +104,10 @@ Done. Next:
   1. Fill in CONTEXT.md (who you are + routing) and state/current.md.
   2. If memory lives outside this repo, export AGENT_MEMORY_DIR=/home/you/my-context/memory
   3. Open your agent here and run /start. Close with /end. Curate with /dream.
+
+Try it now: run /dream against the seeded memory to see an empty-but-valid pass.
+
+Memory dir: /home/you/my-context/memory  (keep it local if it holds anything private)
 ```
 
 **Windows:** run `init.sh` from Git Bash or WSL. The manual steps below work in any shell, including PowerShell and `cmd`.
