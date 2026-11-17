@@ -71,6 +71,13 @@ Trade-off: no automatic relevance-decay daemon. So the forgetting has to be a de
 
 ## Install (Claude Code)
 
+You need `git` with a commit identity set, because `init.sh` makes a seed commit in the memory repo. On a fresh machine, set one first:
+
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+```
+
 From zero, clone the kit and point `init.sh` at where your context should live:
 
 ```bash
@@ -110,6 +117,13 @@ Try it now: run /dream against the seeded memory to see an empty-but-valid pass.
 Memory dir: /home/you/my-context/memory  (keep it local if it holds anything private)
 ```
 
+If the seed commit fails (for example, no git identity), `init.sh` exits with `seed commit failed` and leaves the memory repo initialized with its files staged. A re-run then stops with `memory git repository exists but has no seed commit`. Set your identity, make the commit yourself, then re-run to finish:
+
+```bash
+git -C ~/my-context/memory commit -m "seed memory"
+./init.sh --path ~/my-context
+```
+
 **Windows:** run `init.sh` from Git Bash or WSL. The manual steps below work in any shell, including PowerShell and `cmd`.
 
 Manual install, if you'd rather wire it yourself:
@@ -142,6 +156,8 @@ your-context-repo/
 ```bash
 cd memory && git init && git add -A && git commit -m "seed memory"
 ```
+
+The tree above shows `ARCHIVE.md` and `archive/`, but `context-starter/` does not include them. `/dream-apply` creates `archive/` and appends the first row to `ARCHIVE.md` the first time it retires a memory, so neither is needed up front.
 
 ## Memory directory resolution
 
