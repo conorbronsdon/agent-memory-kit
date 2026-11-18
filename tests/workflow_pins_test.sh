@@ -3,7 +3,8 @@
 # Every third-party `uses:` under .github/workflows and .github/actions is pinned to
 # a full 40-character commit SHA with its tag in a trailing `# vX.Y.Z` comment, every workflow sets
 # top-level `permissions:` and grants no write scope (no `write-all`, no `<scope>: write`),
-# and Dependabot watches github-actions. The test does not check that a SHA is the commit
+# and Dependabot watches github-actions. The write-scope check reads `<scope>: write` on one
+# line; a value on the next line or behind a YAML tag or anchor is not caught. The test does not check that a SHA is the commit
 # its version comment names; Dependabot maintains that pairing.
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
@@ -126,14 +127,36 @@ GOT=$(printf '%s
 assert_eq "$GOT" "" "write-scope check flagged read-only permissions, a comment or a run line"
 echo "ok - write-scope check accepts read-only permissions"
 
+# Reads a workflow on stdin; succeeds when it has a top-level (unindented) permissions: key.
+has_top_permissions() { grep -q '^permissions:'; }
+
+printf '%s\n' 'on: push' 'jobs:' '  t:' '    permissions:' '      contents: read' | has_top_permissions \
+  && fail "accepted a workflow whose only permissions: is job-level"
+printf '%s\n' 'on: push' '# permissions:' | has_top_permissions && fail "accepted a commented-out permissions:"
+printf '%s\n' 'on: push' 'permissions:' '  contents: read' | has_top_permissions || fail "rejected a top-level permissions:"
+echo "ok - top-level permissions check flags a missing or job-level-only block"
+
 for f in "$ROOT"/.github/workflows/*.yml "$ROOT"/.github/workflows/*.yaml; do
   [ -f "$f" ] || continue
-  grep -q '^permissions:' "$f" || fail "${f#"$ROOT"/} has no top-level permissions:"
+  tr -d '\r' <"$f" | has_top_permissions || fail "${f#"$ROOT"/} has no top-level permissions:"
   grants=$(write_grants <"$f")
   [ -z "$grants" ] || fail "${f#"$ROOT"/} grants a write scope:$NL$grants"
 done
 echo "ok - every workflow sets top-level permissions and grants no write scope"
 
 test -f "$ROOT/.github/dependabot.yml" || fail ".github/dependabot.yml is missing"
-grep -Eq "package-ecosystem:[[:space:]]*[\"']?github-actions" "$ROOT/.github/dependabot.yml" || fail "dependabot does not watch github-actions"
+# Reads dependabot.yml on stdin; succeeds when an uncommented update entry watches github-actions.
+watches_actions() {
+  tr -d '\r' | grep -v -E '^[[:space:]]*#' \
+    | grep -Eq "^[[:space:]]*(-[[:space:]]+)?package-ecosystem:[[:space:]]*[\"']?github-actions[\"']?[[:space:]]*(#.*)?\$"
+}
+
+printf '%s\n' 'version: 2' 'updates:' '  # - package-ecosystem: github-actions' | watches_actions \
+  && fail "accepted a commented-out github-actions entry"
+printf '%s\n' 'version: 2' 'updates:' '  - package-ecosystem: npm' | watches_actions && fail "accepted an npm-only config"
+printf '%s\n' 'version: 2' 'updates:' '  - package-ecosystem: "github-actions"' | watches_actions \
+  || fail "rejected a quoted github-actions entry"
+echo "ok - dependabot check flags a commented-out or missing github-actions entry"
+
+watches_actions <"$ROOT/.github/dependabot.yml" || fail "dependabot does not watch github-actions"
 echo "ok - dependabot watches github-actions"
