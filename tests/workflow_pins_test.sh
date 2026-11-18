@@ -26,6 +26,16 @@ unpinned_uses() {
       done
 }
 
+# Reads YAML on stdin; prints every non-comment line that mentions a `uses:` key in a form
+# unpinned_uses does not parse (flow mapping, quoted key, value on the next line), so an
+# unparsed form fails the run instead of being skipped. A `uses:` inside other text (for
+# example a run: line) is also printed: that fails closed.
+unparsed_uses() {
+  tr -d '\r' | grep -v -E '^[[:space:]]*#' \
+    | grep -E "[\"']?uses[\"']?[[:space:]]*:" \
+    | grep -v -E "^[[:space:]]*(-[[:space:]]+)?uses:[[:space:]]*[\"']?[^[:space:]\"'#]+[\"']?[[:space:]]*(#.*)?\$" || true
+}
+
 NL='
 '
 GOT=$(printf '%s\n' \
@@ -57,12 +67,29 @@ GOT=$(printf '%s\n' \
 assert_eq "$GOT" "" "parser flagged a full SHA, local action, docker image or comment"
 echo "ok - parser accepts a full SHA pin, local actions and docker images"
 
+GOT=$(printf '%s\n' \
+  '      - { uses: actions/checkout@v4 }' \
+  '      - "uses": actions/checkout@v4' \
+  '      - uses:' \
+  '          actions/checkout@v4' | unparsed_uses)
+assert_eq "$GOT" "      - { uses: actions/checkout@v4 }${NL}      - \"uses\": actions/checkout@v4${NL}      - uses:" "missed a flow-mapping, quoted-key or next-line uses:"
+echo "ok - forms the parser can't read are flagged, not skipped"
+
+GOT=$(printf '%s\n' \
+  '      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0' \
+  "        uses: 'owner/action@main'" \
+  '      # uses: { a: b } (a comment)' | unparsed_uses)
+assert_eq "$GOT" "" "flagged a uses: form the parser reads, or a comment"
+echo "ok - forms the parser reads are not flagged as unparsed"
+
 FILES=$(find "$ROOT/.github/workflows" "$ROOT/.github/actions" -type f \( -name '*.yml' -o -name '*.yaml' \) 2>/dev/null | sort)
 [ -n "$FILES" ] || fail "no workflow files found under .github/"
 BAD=""
 for f in $FILES; do
   refs=$(unpinned_uses <"$f")
   [ -z "$refs" ] || BAD="$BAD${f#"$ROOT"/}: $refs$NL"
+  odd=$(unparsed_uses <"$f")
+  [ -z "$odd" ] || BAD="$BAD${f#"$ROOT"/}: unparsed uses: form: $odd$NL"
 done
 [ -z "$BAD" ] || fail "pin these to a full commit SHA with a version comment:$NL$BAD"
 echo "ok - every uses: is pinned to a full commit SHA"
