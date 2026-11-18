@@ -11,13 +11,18 @@ fail() { echo "not ok - $*" >&2; exit 1; }
 assert_eq() { [ "$1" = "$2" ] || fail "$3 (got '$1', want '$2')"; }
 
 # Reads YAML on stdin; prints every `uses:` ref that is not exactly
-# owner/repo@<40-hex SHA> with a trailing `# vX.Y.Z` comment. Local ./ actions and
-# docker:// images are skipped. Pins that only end in a SHA (sha@sha) are flagged.
+# owner/repo@<40-hex SHA> with a trailing `# vX.Y.Z` comment. Local ./ actions are
+# skipped; a docker:// image must be pinned to an @sha256 digest. Pins that only end in a SHA (sha@sha) are flagged.
 unpinned_uses() {
   tr -d '\r' \
     | sed -n -E "s/^[[:space:]]*(-[[:space:]]+)?uses:[[:space:]]*[\"']?([^[:space:]\"'#]+)[\"']?[[:space:]]*(#.*)?\$/\\2 \\3/p" \
     | while IFS=' ' read -r ref comment || [ -n "$ref" ]; do
-        case $ref in ./*|docker://*) continue ;; esac
+        case $ref in
+          ./*) continue ;;
+          docker://*)
+            printf '%s\n' "$ref" | grep -Eq '@sha256:[0-9a-f]{64}$' || echo "$ref (docker image not pinned to a digest)"
+            continue ;;
+        esac
         if ! printf '%s\n' "$ref" | grep -Eq '^[^@]+@[0-9a-f]{40}$'; then
           echo "$ref"
         elif ! printf '%s\n' "$comment" | grep -Eq '^#[[:space:]]*v?[0-9]'; then
@@ -62,10 +67,14 @@ GOT=$(printf '%s\n' \
   '      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0' \
   '        uses: ./' \
   '        uses: ./.github/actions/setup' \
-  '        uses: docker://alpine:3.20' \
+  '        uses: docker://alpine@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' \
   '      # uses: actions/checkout@v4 (a comment, not a step)' | unpinned_uses)
-assert_eq "$GOT" "" "parser flagged a full SHA, local action, docker image or comment"
-echo "ok - parser accepts a full SHA pin, local actions and docker images"
+assert_eq "$GOT" "" "parser flagged a full SHA, local action, digest-pinned docker image or comment"
+echo "ok - parser accepts a full SHA pin, local actions and digest-pinned docker images"
+
+GOT=$(printf '%s\n' '        uses: docker://alpine:3.20' '        uses: docker://alpine' | unpinned_uses)
+assert_eq "$GOT" "docker://alpine:3.20 (docker image not pinned to a digest)${NL}docker://alpine (docker image not pinned to a digest)" "parser accepted a docker image by tag"
+echo "ok - parser flags a docker image pinned by tag or not at all"
 
 GOT=$(printf '%s\n' \
   '      - { uses: actions/checkout@v4 }' \

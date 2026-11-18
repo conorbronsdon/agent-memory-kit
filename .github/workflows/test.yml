@@ -15,7 +15,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Check shell syntax
-        run: sh -n init.sh tests/init_test.sh
+        run: sh -n init.sh && sh -n tests/init_test.sh && sh -n tests/workflow_pins_test.sh
       - name: Test installer
         run: sh tests/init_test.sh
       - name: Check workflow pins and permissions
