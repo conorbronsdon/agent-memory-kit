@@ -18,3 +18,5 @@ jobs:
         run: sh -n init.sh tests/init_test.sh
       - name: Test installer
         run: sh tests/init_test.sh
+      - name: Check workflow pins and permissions
+        run: sh tests/workflow_pins_test.sh

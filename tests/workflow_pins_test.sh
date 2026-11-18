@@ -2,7 +2,9 @@
 # Supply-chain guard for GitHub Actions. Run: sh tests/workflow_pins_test.sh
 # Every third-party `uses:` under .github/workflows and .github/actions is pinned to
 # a full 40-character commit SHA with its tag in a trailing `# vX.Y.Z` comment, every workflow sets
-# top-level `permissions:`, and Dependabot watches github-actions.
+# top-level `permissions:` and grants no write scope (no `write-all`, no `<scope>: write`),
+# and Dependabot watches github-actions. The test does not check that a SHA is the commit
+# its version comment names; Dependabot maintains that pairing.
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 fail() { echo "not ok - $*" >&2; exit 1; }
@@ -65,11 +67,36 @@ done
 [ -z "$BAD" ] || fail "pin these to a full commit SHA with a version comment:$NL$BAD"
 echo "ok - every uses: is pinned to a full commit SHA"
 
+# Reads a workflow on stdin; prints each line that grants a write scope (`write-all`, or
+# `<scope>: write` at any level). Comment lines are ignored.
+write_grants() {
+  tr -d '\r' | grep -v -E '^[[:space:]]*#' \
+    | grep -E "(^|[[:space:]:{,])[\"']?write-all|:[[:space:]]*[\"']?write[\"']?[[:space:]]*(#.*)?([,}]|\$)" || true
+}
+
+GOT=$(printf '%s
+' 'permissions: write-all' | write_grants)
+assert_eq "$GOT" "permissions: write-all" "missed a top-level write-all"
+GOT=$(printf '%s
+' '    permissions:' '      contents: write' | write_grants)
+assert_eq "$GOT" "      contents: write" "missed a job-level contents: write"
+GOT=$(printf '%s
+' 'permissions: { contents: read, packages: write }' | write_grants)
+assert_eq "$GOT" "permissions: { contents: read, packages: write }" "missed a write scope in a flow mapping"
+echo "ok - write-scope check flags write-all and <scope>: write"
+
+GOT=$(printf '%s
+' 'permissions:' '  contents: read' '  # contents: write (a comment)' '      run: echo write' 'permissions: {}' | write_grants)
+assert_eq "$GOT" "" "write-scope check flagged read-only permissions, a comment or a run line"
+echo "ok - write-scope check accepts read-only permissions"
+
 for f in "$ROOT"/.github/workflows/*.yml "$ROOT"/.github/workflows/*.yaml; do
   [ -f "$f" ] || continue
   grep -q '^permissions:' "$f" || fail "${f#"$ROOT"/} has no top-level permissions:"
+  grants=$(write_grants <"$f")
+  [ -z "$grants" ] || fail "${f#"$ROOT"/} grants a write scope:$NL$grants"
 done
-echo "ok - every workflow sets top-level permissions"
+echo "ok - every workflow sets top-level permissions and grants no write scope"
 
 test -f "$ROOT/.github/dependabot.yml" || fail ".github/dependabot.yml is missing"
 grep -Eq "package-ecosystem:[[:space:]]*[\"']?github-actions" "$ROOT/.github/dependabot.yml" || fail "dependabot does not watch github-actions"
