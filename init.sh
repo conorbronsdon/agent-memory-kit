@@ -158,6 +158,18 @@ else
 fi
 
 # guard: memory holds durable, possibly-private facts. Keep it local.
+HOOK_DST="$MEMORY_DIR/.git/hooks/pre-push"
+if [ -d "$MEMORY_DIR/.git" ]; then
+  if [ -e "$HOOK_DST" ] || [ -L "$HOOK_DST" ]; then
+    echo "  skip (exists): ${HOOK_DST#$TARGET/}"
+  else
+    mkdir -p "$MEMORY_DIR/.git/hooks"
+    printf '#!/usr/bin/env sh\necho "agent-memory-kit: refusing to push memory repo (keep local-only; bypass with --no-verify)" >&2\nexit 1\n' > "$HOOK_DST"
+    chmod +x "$HOOK_DST"
+    echo "  wrote: ${HOOK_DST#$TARGET/}"
+  fi
+fi
+
 if ( cd "$MEMORY_DIR" && git remote 2>/dev/null | grep -q . ); then
   echo "  WARNING: memory repo has a remote configured." >&2
   echo "           If this memory is private, remove it: git -C '$MEMORY_DIR' remote remove <name>" >&2
