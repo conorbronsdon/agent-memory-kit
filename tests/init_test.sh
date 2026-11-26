@@ -84,6 +84,7 @@ WORKTREE_HEAD=$(git_env "$TMP_ROOT/worktree/gitconfig" git -C "$TMP_ROOT/worktre
 run_init "$TMP_ROOT/worktree" >"$TMP_ROOT/worktree/output"
 assert_eq "$(git_env "$TMP_ROOT/worktree/gitconfig" git -C "$TMP_ROOT/worktree/context/memory" rev-parse HEAD)" "$WORKTREE_HEAD" "installer committed in worktree"
 test -f "$TMP_ROOT/worktree/context/memory/.git" || fail "worktree .git file was replaced"
+test ! -e "$TMP_ROOT/worktree/source/.git/hooks/pre-push" || fail "installer wrote pre-push hook into worktree parent repo"
 grep -q 'already a repo (left alone)' "$TMP_ROOT/worktree/output" || fail "worktree was not recognized"
 echo "ok - .git file worktrees are preserved"
 
@@ -113,3 +114,33 @@ git_env "$TMP_ROOT/absmem/gitconfig" sh "$ROOT/init.sh" --path "$TMP_ROOT/absmem
 assert_eq "$(sed -n 's/^  2\. If memory lives outside this repo, export AGENT_MEMORY_DIR=//p' "$TMP_ROOT/absmem/output")" "$ABSMEM" "absolute --memory-dir export changed"
 test "$(git_env "$TMP_ROOT/absmem/gitconfig" git -C "$ABSMEM" rev-list --count HEAD)" = 1 || fail "absolute --memory-dir was not seeded"
 echo "ok - absolute --memory-dir is printed unchanged"
+
+mkdir -p "$TMP_ROOT/prepush"; configure_identity "$TMP_ROOT/prepush"
+run_init "$TMP_ROOT/prepush" >"$TMP_ROOT/prepush/output"
+HOOK="$TMP_ROOT/prepush/context/memory/.git/hooks/pre-push"
+test -f "$HOOK" || fail "init.sh did not install memory pre-push hook"
+test -x "$HOOK" || fail "memory pre-push hook is not executable"
+grep -q 'wrote: memory/.git/hooks/pre-push' "$TMP_ROOT/prepush/output" || fail "init.sh did not report installing pre-push hook"
+git_env "$TMP_ROOT/prepush/gitconfig" git init --bare -q "$TMP_ROOT/prepush/remote.git"
+git_env "$TMP_ROOT/prepush/gitconfig" git -C "$TMP_ROOT/prepush/context/memory" remote add origin "$TMP_ROOT/prepush/remote.git"
+if git_env "$TMP_ROOT/prepush/gitconfig" git -C "$TMP_ROOT/prepush/context/memory" push origin HEAD >"$TMP_ROOT/prepush/push-out" 2>"$TMP_ROOT/prepush/push-err"; then
+  fail "git push succeeded despite installed pre-push hook"
+fi
+grep -q 'refusing to push' "$TMP_ROOT/prepush/push-err" || fail "pre-push hook did not explain refusal"
+assert_eq "$(git_env "$TMP_ROOT/prepush/gitconfig" git -C "$TMP_ROOT/prepush/remote.git" for-each-ref)" "" "blocked push updated bare remote"
+git_env "$TMP_ROOT/prepush/gitconfig" git -C "$TMP_ROOT/prepush/context/memory" push --no-verify origin HEAD >/dev/null 2>&1 || fail "git push --no-verify did not bypass pre-push hook"
+test -n "$(git_env "$TMP_ROOT/prepush/gitconfig" git -C "$TMP_ROOT/prepush/remote.git" for-each-ref)" || fail "bypassed push did not update bare remote"
+echo "ok - pre-push hook blocks push to a remote and allows --no-verify"
+
+mkdir -p "$TMP_ROOT/keephook/context/memory"; configure_identity "$TMP_ROOT/keephook"
+git_env "$TMP_ROOT/keephook/gitconfig" git -C "$TMP_ROOT/keephook/context/memory" init -q
+printf 'seed\n' >"$TMP_ROOT/keephook/context/memory/note.md"
+git_env "$TMP_ROOT/keephook/gitconfig" git -C "$TMP_ROOT/keephook/context/memory" add note.md
+git_env "$TMP_ROOT/keephook/gitconfig" git -C "$TMP_ROOT/keephook/context/memory" commit -q -m seed
+mkdir -p "$TMP_ROOT/keephook/context/memory/.git/hooks"
+printf '#!/usr/bin/env sh\n# custom user hook\nexit 0\n' >"$TMP_ROOT/keephook/context/memory/.git/hooks/pre-push"
+chmod +x "$TMP_ROOT/keephook/context/memory/.git/hooks/pre-push"
+git_env "$TMP_ROOT/keephook/gitconfig" sh "$ROOT/init.sh" --path "$TMP_ROOT/keephook/context" --force >"$TMP_ROOT/keephook/output"
+grep -q '# custom user hook' "$TMP_ROOT/keephook/context/memory/.git/hooks/pre-push" || fail "init.sh overwrote a pre-existing pre-push hook"
+grep -q 'skip (exists): memory/.git/hooks/pre-push' "$TMP_ROOT/keephook/output" || fail "init.sh did not report skipping existing pre-push hook"
+echo "ok - pre-existing user pre-push hook is preserved"

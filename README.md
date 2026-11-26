@@ -106,6 +106,7 @@ agent-memory-kit: scaffolding into /home/you/my-context
   wrote: memory/ARCHIVE.md
   wrote: memory/archive/.gitkeep
   memory git: initialized + seeded (local-only, no remote)
+  wrote: memory/.git/hooks/pre-push
 
 Done. Next:
   1. Fill in CONTEXT.md (who you are + routing) and state/current.md.
@@ -167,7 +168,7 @@ The dream commands resolve the memory dir in this order:
 2. `./memory/` if it exists in the repo
 3. Claude Code's per-project memory: `~/.claude/projects/<encoded-cwd>/memory/`, where `<encoded-cwd>` is your absolute path with `:` `\` `/` all replaced by `-`.
 
-Keep the memory repo **local-only** if it holds anything private. No remote. The dream commands refuse to push.
+Keep the memory repo **local-only** if it holds anything private. No remote. The dream commands are told never to push, and `init.sh` installs a `pre-push` hook that blocks pushes from the memory repo (bypassable with `--no-verify`).
 
 ## Docs
 
